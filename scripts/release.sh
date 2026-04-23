@@ -141,10 +141,34 @@ if [ "$MODE" != "current" ]; then
 fi
 git tag -a "${tag}" -m "Release ${tag}"
 
+repo_url() {
+  local url
+  url=$(git config --get remote.origin.url || echo "")
+  url="${url#git@github.com:}"
+  url="${url#https://github.com/}"
+  url="${url%.git}"
+  echo "https://github.com/${url}"
+}
+
+print_crates_reminder() {
+  cat <<EOF
+
+---
+Actions: $(repo_url)/actions
+
+crates.io publish is NOT automated.
+crates.io is IMMUTABLE: a published version cannot be changed or removed.
+
+  cargo publish --dry-run    # verify
+  cargo publish              # irreversible
+EOF
+}
+
 if [ "$PUSH" = 0 ]; then
   echo
   echo "Release ${tag} prepared locally (push skipped by --no-push)."
   echo "To publish later: git push origin main \"${tag}\""
+  print_crates_reminder
   exit 0
 fi
 
@@ -153,3 +177,4 @@ git push origin main "${tag}"
 
 echo
 echo "Release ${tag} published. CI will build binaries and attach them."
+print_crates_reminder
