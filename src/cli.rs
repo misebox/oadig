@@ -94,30 +94,29 @@ pub enum Command {
     Paths {
         #[arg(help = FILE_DOC)]
         file: String,
-        /// Keep only paths that contain this substring.
-        #[arg(long)]
-        filter: Option<String>,
-        /// Keep only paths that start with this prefix.
-        #[arg(long)]
-        prefix: Option<String>,
+        /// Filter as key=value. Only `path=` is supported here.
+        ///
+        /// `*` acts as a wildcard at the start and/or end of the value
+        /// (quote to protect from the shell): `*foo*` contains, `foo*`
+        /// prefix, `*foo` suffix, `foo` exact.
+        #[arg(long = "filter")]
+        filters: Vec<String>,
     },
     /// List operations (method + path, with configurable extras).
     #[command(alias = "ops")]
     Operations {
         #[arg(help = FILE_DOC)]
         file: String,
-        /// Keep only operations with these HTTP methods (comma-separated).
-        #[arg(short = 'm', long, value_delimiter = ',')]
-        method: Vec<String>,
-        /// Keep only operations whose path contains this substring.
-        #[arg(long)]
-        filter: Option<String>,
-        /// Keep only operations whose path starts with this prefix.
-        #[arg(long)]
-        prefix: Option<String>,
-        /// Keep only operations tagged with this name.
-        #[arg(long)]
-        tag: Option<String>,
+        /// Filter as key=value. Repeat for AND.
+        ///
+        /// Keys: method, path, tag, operationId, summary, description, deprecated.
+        ///
+        /// `method` and `tag` take one value or a comma list (OR within).
+        /// Other keys use `*` as a wildcard at start/end of value (quote
+        /// to protect from the shell): `*foo*` contains, `foo*` prefix,
+        /// `*foo` suffix, `foo` exact. `deprecated` takes `true`/`false`.
+        #[arg(long = "filter")]
+        filters: Vec<String>,
         /// Extra fields per entry.
         ///
         /// Default: summary.

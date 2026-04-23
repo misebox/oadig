@@ -31,29 +31,17 @@ pub fn dispatch(
         Command::Info { file } => info::run(&loader::load(file)?.value, show_null),
         Command::Overview { file } => overview::run(&loader::load(file)?.value, show_null),
         Command::Stats { file } => stats::run(&loader::load(file)?.value),
-        Command::Paths {
-            file,
-            filter: contains,
-            prefix,
-        } => {
-            let pf = filter::PathFilter::new(contains.as_deref(), prefix.as_deref());
+        Command::Paths { file, filters } => {
+            let pf = filter::PathFilter::from_strings(filters)?;
             paths::run(&loader::load(file)?.value, &pf)
         }
         Command::Operations {
             file,
+            filters,
             include,
             exclude,
-            method,
-            filter: contains,
-            prefix,
-            tag,
         } => {
-            let of = filter::OpFilter::new(
-                method,
-                contains.as_deref(),
-                prefix.as_deref(),
-                tag.as_deref(),
-            );
+            let of = filter::OpFilter::from_strings(filters)?;
             operations::run(&loader::load(file)?.value, include, exclude, &of, opts)
         }
         Command::Operation {

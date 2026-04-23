@@ -108,68 +108,82 @@ fn paths_lists_unique_path_strings() {
 }
 
 #[test]
-fn paths_filter_keeps_only_matches_by_substring() {
-    let paths = run_json(&["paths", PETSTORE_YAML, "--filter", "petId"]);
+fn paths_filter_by_path_prefix() {
+    let paths = run_json(&["paths", PETSTORE_YAML, "--filter", "path=/pets/*"]);
     assert_eq!(paths, json!(["/pets/{petId}"]));
 }
 
 #[test]
-fn paths_filter_by_prefix() {
-    let paths = run_json(&["paths", PETSTORE_YAML, "--prefix", "/pets/"]);
-    assert_eq!(paths, json!(["/pets/{petId}"]));
+fn paths_filter_rejects_non_path_key() {
+    let out = bin()
+        .args(["paths", PETSTORE_YAML, "--filter", "method=GET"])
+        .output()
+        .expect("spawn");
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("path"));
 }
 
 #[test]
-fn operations_filter_by_method() {
-    let ops = run_json(&["operations", PETSTORE_YAML, "--method", "POST"]);
+fn operations_filter_method_exact() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--filter", "method=POST"]);
     let arr = ops.as_array().unwrap();
     assert_eq!(arr.len(), 1);
     assert_eq!(arr[0]["method"], "POST");
 }
 
 #[test]
-fn operations_filter_by_multiple_methods() {
-    let ops = run_json(&["operations", PETSTORE_YAML, "--method", "GET,POST"]);
+fn operations_filter_method_list_or() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--filter", "method=GET,POST"]);
     assert_eq!(ops.as_array().unwrap().len(), 3);
 }
 
 #[test]
-fn operations_filter_by_path_substring() {
-    let ops = run_json(&["operations", PETSTORE_YAML, "--filter", "petId"]);
+fn operations_filter_path_contains() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--filter", "path=*petId*"]);
     let arr = ops.as_array().unwrap();
     assert_eq!(arr.len(), 1);
     assert_eq!(arr[0]["path"], "/pets/{petId}");
 }
 
 #[test]
-fn operations_filter_by_prefix() {
-    let ops = run_json(&["operations", PETSTORE_YAML, "--prefix", "/pets/"]);
+fn operations_filter_path_prefix() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--filter", "path=/pets/*"]);
     let arr = ops.as_array().unwrap();
     assert_eq!(arr.len(), 1);
     assert_eq!(arr[0]["path"], "/pets/{petId}");
 }
 
 #[test]
-fn operations_filter_combines_substring_and_prefix_as_and() {
+fn operations_filter_combines_as_and() {
     let ops = run_json(&[
         "operations",
         PETSTORE_YAML,
-        "--prefix",
-        "/pets",
         "--filter",
-        "petId",
+        "tag=pets",
+        "--filter",
+        "method=POST",
     ]);
     let arr = ops.as_array().unwrap();
     assert_eq!(arr.len(), 1);
-    assert_eq!(arr[0]["path"], "/pets/{petId}");
+    assert_eq!(arr[0]["method"], "POST");
 }
 
 #[test]
-fn operations_filter_by_tag() {
-    let ops = run_json(&["operations", PETSTORE_YAML, "--tag", "pets"]);
+fn operations_filter_tag_exact() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--filter", "tag=pets"]);
     assert_eq!(ops.as_array().unwrap().len(), 3);
-    let none = run_json(&["operations", PETSTORE_YAML, "--tag", "nonexistent"]);
+    let none = run_json(&["operations", PETSTORE_YAML, "--filter", "tag=nonexistent"]);
     assert!(none.as_array().unwrap().is_empty());
+}
+
+#[test]
+fn operations_filter_rejects_unknown_key() {
+    let out = bin()
+        .args(["operations", PETSTORE_YAML, "--filter", "foo=bar"])
+        .output()
+        .expect("spawn");
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("unknown filter key"));
 }
 
 #[test]
