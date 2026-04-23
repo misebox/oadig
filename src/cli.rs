@@ -81,7 +81,7 @@ pub enum Command {
         file: String,
     },
     /// Emit the spec version string (openapi 3.x or swagger 2.0).
-    SpecVersion {
+    Spec {
         #[arg(help = FILE_DOC)]
         file: String,
     },

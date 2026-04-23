@@ -28,7 +28,7 @@ pub fn for_invocation(args: &Cli) -> Vec<String> {
 fn subcommand_name(cmd: &Command) -> &'static str {
     match cmd {
         Command::Info { .. } => "info",
-        Command::SpecVersion { .. } => "spec-version",
+        Command::Spec { .. } => "spec",
         Command::Stats { .. } => "stats",
         Command::Overview { .. } => "overview",
         Command::Paths { .. } => "paths",
@@ -51,7 +51,7 @@ fn subcommand_name(cmd: &Command) -> &'static str {
 fn command_resolves_refs(cmd: &Command) -> bool {
     match cmd {
         Command::Info { .. }
-        | Command::SpecVersion { .. }
+        | Command::Spec { .. }
         | Command::Stats { .. }
         | Command::Overview { .. }
         | Command::Paths { .. }
@@ -81,7 +81,7 @@ fn command_can_touch_refs(cmd: &Command) -> bool {
     // Same set as commands that could ever resolve, regardless of flags.
     match cmd {
         Command::Info { .. }
-        | Command::SpecVersion { .. }
+        | Command::Spec { .. }
         | Command::Stats { .. }
         | Command::Overview { .. }
         | Command::Paths { .. }

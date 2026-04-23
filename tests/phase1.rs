@@ -23,21 +23,21 @@ const CIRCULAR_YAML: &str = "tests/fixtures/circular.yaml";
 const SWAGGER2_YAML: &str = "tests/fixtures/swagger2.yaml";
 
 #[test]
-fn spec_version_returns_openapi_for_v3() {
-    let v = run_json(&["spec-version", PETSTORE_YAML]);
+fn spec_returns_openapi_for_v3() {
+    let v = run_json(&["spec", PETSTORE_YAML]);
     assert_eq!(v, "3.1.0");
 }
 
 #[test]
-fn spec_version_returns_swagger_for_v2() {
-    let v = run_json(&["spec-version", SWAGGER2_YAML]);
+fn spec_returns_swagger_for_v2() {
+    let v = run_json(&["spec", SWAGGER2_YAML]);
     assert_eq!(v, "2.0");
 }
 
 #[test]
-fn spec_version_is_null_when_missing() {
+fn spec_is_null_when_missing() {
     let out = bin()
-        .args(["spec-version", "-"])
+        .args(["spec", "-"])
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .spawn()
