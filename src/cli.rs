@@ -76,13 +76,13 @@ pub enum Command {
         #[arg(help = FILE_DOC)]
         file: String,
     },
-    /// Combined info + stats + paths.
-    Overview {
+    /// Show counts: paths, operations, schemas, tags, methods.
+    Stats {
         #[arg(help = FILE_DOC)]
         file: String,
     },
-    /// Show counts: paths, operations, schemas, tags, methods.
-    Stats {
+    /// Combined info + stats + operations.
+    Overview {
         #[arg(help = FILE_DOC)]
         file: String,
     },
@@ -125,14 +125,6 @@ pub enum Command {
         #[arg(help = FILE_DOC)]
         file: String,
     },
-    /// List responses of every operation. Optionally narrow to one status.
-    Responses {
-        #[arg(help = FILE_DOC)]
-        file: String,
-        /// Narrow each entry to a single status code (e.g. 200).
-        #[arg(long)]
-        status: Option<String>,
-    },
     /// Show the requestBody of a single operation, $refs resolved.
     #[command(alias = "req")]
     Request {
@@ -144,6 +136,14 @@ pub enum Command {
         method: Option<String>,
         #[arg(short = 'p', long, conflicts_with = "id", requires = "method")]
         path: Option<String>,
+    },
+    /// List responses of every operation. Optionally narrow to one status.
+    Responses {
+        #[arg(help = FILE_DOC)]
+        file: String,
+        /// Narrow each entry to a single status code (e.g. 200).
+        #[arg(long)]
+        status: Option<String>,
     },
     /// Show the responses of a single operation, $refs resolved.
     #[command(alias = "res")]
