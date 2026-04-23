@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 const METHODS: &[&str] = &[
     "get", "put", "post", "delete", "options", "head", "patch", "trace",
@@ -16,9 +16,13 @@ pub fn run(spec: &Value) -> Value {
 
     if let Some(paths) = paths {
         for (_, item) in paths {
-            let Some(item_obj) = item.as_object() else { continue };
+            let Some(item_obj) = item.as_object() else {
+                continue;
+            };
             for method in METHODS {
-                let Some(op) = item_obj.get(*method) else { continue };
+                let Some(op) = item_obj.get(*method) else {
+                    continue;
+                };
                 operations += 1;
                 *by_method.entry(method.to_uppercase()).or_default() += 1;
                 if let Some(tags) = op.get("tags").and_then(Value::as_array) {

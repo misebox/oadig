@@ -54,7 +54,11 @@ fn detect_format(text: &str, hint: Option<Format>) -> Format {
         if c.is_whitespace() {
             continue;
         }
-        return if c == '{' || c == '[' { Format::Json } else { Format::Yaml };
+        return if c == '{' || c == '[' {
+            Format::Json
+        } else {
+            Format::Yaml
+        };
     }
     Format::Yaml
 }

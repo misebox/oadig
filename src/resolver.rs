@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ResolveOptions {
@@ -10,7 +10,10 @@ pub struct ResolveOptions {
 
 impl Default for ResolveOptions {
     fn default() -> Self {
-        Self { resolve: true, max_depth: None }
+        Self {
+            resolve: true,
+            max_depth: None,
+        }
     }
 }
 
@@ -22,7 +25,11 @@ pub struct Resolver<'a> {
 
 impl<'a> Resolver<'a> {
     pub fn new(root: &'a Value, opts: ResolveOptions) -> Self {
-        Self { root, opts, stack: HashSet::new() }
+        Self {
+            root,
+            opts,
+            stack: HashSet::new(),
+        }
     }
 
     pub fn resolve(&mut self, value: Value, origin_ref: &str) -> Value {
@@ -50,9 +57,9 @@ impl<'a> Resolver<'a> {
                 }
                 Value::Object(out)
             }
-            Value::Array(arr) => Value::Array(
-                arr.into_iter().map(|v| self.walk(v, depth + 1)).collect(),
-            ),
+            Value::Array(arr) => {
+                Value::Array(arr.into_iter().map(|v| self.walk(v, depth + 1)).collect())
+            }
             other => other,
         }
     }

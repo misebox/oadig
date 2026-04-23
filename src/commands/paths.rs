@@ -1,4 +1,4 @@
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 const METHODS: &[&str] = &[
     "get", "put", "post", "delete", "options", "head", "patch", "trace",
@@ -10,7 +10,9 @@ pub fn run(spec: &Value) -> Value {
     };
     let mut out = Vec::new();
     for (path, item) in paths {
-        let Some(item_obj) = item.as_object() else { continue };
+        let Some(item_obj) = item.as_object() else {
+            continue;
+        };
         for method in METHODS {
             if item_obj.contains_key(*method) {
                 out.push(json!({
