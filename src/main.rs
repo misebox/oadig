@@ -23,6 +23,10 @@ fn main() -> Result<()> {
             let loaded = loader::load(file)?;
             commands::info::run(&loaded.value)
         }
+        Command::Overview { file } => {
+            let loaded = loader::load(file)?;
+            commands::overview::run(&loaded.value)
+        }
         Command::Stats { file } => {
             let loaded = loader::load(file)?;
             commands::stats::run(&loaded.value)

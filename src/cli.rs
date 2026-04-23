@@ -1,7 +1,11 @@
 use clap::{Parser, Subcommand, ValueEnum};
 
 #[derive(Debug, Parser)]
-#[command(name = "oadig", version, about = "Extract specific info from OpenAPI specs")]
+#[command(
+    name = "oadig",
+    version,
+    about = "Extract specific info from OpenAPI specs"
+)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Command,
@@ -48,21 +52,14 @@ pub enum Command {
         /// Path to an OpenAPI spec (`-` for stdin).
         file: String,
     },
+    /// Combined info + stats + paths.
+    Overview { file: String },
     /// Show counts: paths, operations, schemas, tags, methods.
-    Stats {
-        file: String,
-    },
+    Stats { file: String },
     /// List method + path pairs.
-    Paths {
-        file: String,
-    },
+    Paths { file: String },
     /// List component schema names.
-    Schemas {
-        file: String,
-    },
+    Schemas { file: String },
     /// Show a single component schema definition.
-    Schema {
-        name: String,
-        file: String,
-    },
+    Schema { name: String, file: String },
 }

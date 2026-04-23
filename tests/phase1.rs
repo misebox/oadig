@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 fn bin() -> Command {
     Command::new(env!("CARGO_BIN_EXE_oadig"))
@@ -28,7 +28,10 @@ fn info_yaml_and_json_match() {
     assert_eq!(from_yaml, from_json);
     assert_eq!(from_yaml["title"], "Petstore");
     assert_eq!(from_yaml["version"], "1.0.0");
-    assert_eq!(from_yaml["servers"][0]["url"], "https://petstore.example.com/v1");
+    assert_eq!(
+        from_yaml["servers"][0]["url"],
+        "https://petstore.example.com/v1"
+    );
 }
 
 #[test]
@@ -83,6 +86,14 @@ fn schema_marks_circular_ref() {
 }
 
 #[test]
+fn overview_combines_info_stats_paths() {
+    let overview = run_json(&["overview", PETSTORE_YAML]);
+    assert_eq!(overview["info"], run_json(&["info", PETSTORE_YAML]));
+    assert_eq!(overview["stats"], run_json(&["stats", PETSTORE_YAML]));
+    assert_eq!(overview["paths"], run_json(&["paths", PETSTORE_YAML]));
+}
+
+#[test]
 fn missing_schema_errors() {
     let out = bin()
         .args(["schema", "Nope", PETSTORE_YAML])
@@ -90,5 +101,8 @@ fn missing_schema_errors() {
         .expect("spawn");
     assert!(!out.status.success());
     let stderr = String::from_utf8_lossy(&out.stderr);
-    assert!(stderr.contains("Nope"), "stderr should mention missing schema: {stderr}");
+    assert!(
+        stderr.contains("Nope"),
+        "stderr should mention missing schema: {stderr}"
+    );
 }
