@@ -4,6 +4,7 @@ mod error;
 mod loader;
 mod output;
 mod resolver;
+mod warnings;
 
 use anyhow::Result;
 use clap::Parser;
@@ -14,6 +15,11 @@ use crate::resolver::ResolveOptions;
 
 fn main() -> Result<()> {
     let args = Cli::parse();
+
+    for msg in warnings::for_invocation(&args) {
+        eprintln!("{msg}");
+    }
+
     let opts = ResolveOptions {
         resolve: args.should_resolve_refs(),
         max_depth: args.max_depth,

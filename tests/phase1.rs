@@ -485,6 +485,57 @@ fn components_show_null_emits_every_section() {
 }
 
 #[test]
+fn max_depth_without_ref_resolution_warns() {
+    let out = bin()
+        .args(["operations", PETSTORE_YAML, "--max-depth", "3"])
+        .output()
+        .expect("spawn");
+    assert!(out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("--max-depth has no effect"));
+}
+
+#[test]
+fn max_depth_silent_when_include_pulls_refs() {
+    let out = bin()
+        .args([
+            "operations",
+            PETSTORE_YAML,
+            "--max-depth",
+            "3",
+            "--include",
+            "response",
+        ])
+        .output()
+        .expect("spawn");
+    assert!(out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("--max-depth"));
+}
+
+#[test]
+fn no_resolve_refs_on_ref_free_command_warns() {
+    let out = bin()
+        .args(["info", PETSTORE_YAML, "--no-resolve-refs"])
+        .output()
+        .expect("spawn");
+    assert!(out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("--no-resolve-refs has no effect"));
+}
+
+#[test]
+fn show_null_on_unsupported_command_warns() {
+    let out = bin()
+        .args(["paths", PETSTORE_YAML, "--show-null"])
+        .output()
+        .expect("spawn");
+    assert!(out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("--show-null has no effect"));
+}
+
+#[test]
 fn schemas_lists_names() {
     let schemas = run_json(&["schemas", PETSTORE_YAML]);
     assert_eq!(schemas, json!(["Pet", "Pets"]));
