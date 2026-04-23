@@ -33,22 +33,33 @@ pub fn run(
     let origin = format!("#operation/{}/{}", located.method, located.path);
     let resolved = operations::resolve_in_place(located.op.clone(), spec, opts, &origin);
 
+    let mut obj = if let Value::Object(obj) = resolved {
+        obj
+    } else {
+        Map::new()
+    };
+
+    // operationId leads so the record is anchored by its identity.
     let mut entry = Map::new();
+    if let Some(v) = obj.shift_remove("operationId") {
+        entry.insert("operationId".into(), v);
+    }
     entry.insert(
         "method".into(),
         Value::String(located.method.to_uppercase()),
     );
     entry.insert("path".into(), Value::String(located.path.clone()));
 
-    if let Value::Object(mut obj) = resolved {
-        for key in CANONICAL {
-            if let Some(v) = obj.shift_remove(*key) {
-                entry.insert((*key).into(), v);
-            }
+    for key in CANONICAL {
+        if *key == "operationId" {
+            continue;
         }
-        for (k, v) in obj {
-            entry.insert(k, v);
+        if let Some(v) = obj.shift_remove(*key) {
+            entry.insert((*key).into(), v);
         }
+    }
+    for (k, v) in obj {
+        entry.insert(k, v);
     }
     Ok(Value::Object(entry))
 }
