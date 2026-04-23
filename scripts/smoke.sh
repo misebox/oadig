@@ -14,6 +14,7 @@ run() {
 }
 
 run "info (yaml)"               info tests/fixtures/petstore.yaml
+run "spec-version"              spec-version tests/fixtures/petstore.yaml
 run "overview (yaml)"           overview tests/fixtures/petstore.yaml
 run "stats (yaml)"              stats tests/fixtures/petstore.yaml
 run "paths (json)"              paths tests/fixtures/petstore.json

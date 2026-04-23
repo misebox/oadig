@@ -12,6 +12,7 @@ pub mod responses;
 pub mod schema;
 pub mod schemas;
 pub mod search;
+pub mod spec_version;
 pub mod stats;
 pub mod tags;
 
@@ -29,6 +30,7 @@ pub fn dispatch(
 ) -> Result<Value, OadigError> {
     Ok(match command {
         Command::Info { file } => info::run(&loader::load(file)?.value, show_null),
+        Command::SpecVersion { file } => spec_version::run(&loader::load(file)?.value),
         Command::Overview { file } => overview::run(&loader::load(file)?.value, show_null),
         Command::Stats { file } => stats::run(&loader::load(file)?.value),
         Command::Paths { file, filters } => {

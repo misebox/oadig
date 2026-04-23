@@ -23,6 +23,38 @@ const CIRCULAR_YAML: &str = "tests/fixtures/circular.yaml";
 const SWAGGER2_YAML: &str = "tests/fixtures/swagger2.yaml";
 
 #[test]
+fn spec_version_returns_openapi_for_v3() {
+    let v = run_json(&["spec-version", PETSTORE_YAML]);
+    assert_eq!(v, "3.1.0");
+}
+
+#[test]
+fn spec_version_returns_swagger_for_v2() {
+    let v = run_json(&["spec-version", SWAGGER2_YAML]);
+    assert_eq!(v, "2.0");
+}
+
+#[test]
+fn spec_version_is_null_when_missing() {
+    let out = bin()
+        .args(["spec-version", "-"])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn");
+    use std::io::Write;
+    out.stdin
+        .as_ref()
+        .unwrap()
+        .write_all(b"info:\n  title: Orphan\n  version: \"0\"\n")
+        .unwrap();
+    let result = out.wait_with_output().unwrap();
+    assert!(result.status.success());
+    let v: Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert!(v.is_null());
+}
+
+#[test]
 fn info_show_null_fills_missing_keys() {
     let out = bin()
         .args(["info", "-", "--show-null"])

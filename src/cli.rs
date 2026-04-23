@@ -80,6 +80,11 @@ pub enum Command {
         #[arg(help = FILE_DOC)]
         file: String,
     },
+    /// Emit the spec version string (openapi 3.x or swagger 2.0).
+    SpecVersion {
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
     /// Show counts: paths, operations, schemas, tags, methods.
     Stats {
         #[arg(help = FILE_DOC)]
