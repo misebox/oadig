@@ -59,6 +59,15 @@ pub enum Format {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ValueEnum)]
 #[value(rename_all = "camelCase")]
+pub enum StatusField {
+    Headers,
+    Schema,
+    /// Expands to every other field.
+    All,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ValueEnum)]
+#[value(rename_all = "camelCase")]
 pub enum OperationField {
     Summary,
     Description,
@@ -173,6 +182,13 @@ pub enum Command {
     Statuses {
         #[arg(help = FILE_DOC)]
         file: String,
+        /// Extra fields per entry.
+        ///
+        /// Default: status, description.
+        ///
+        /// Values: headers, schema, all.
+        #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
+        include: Vec<StatusField>,
     },
     /// List responses of every operation. Optionally narrow to one status.
     Responses {

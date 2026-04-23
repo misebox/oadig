@@ -1,4 +1,4 @@
-use crate::cli::{Cli, Command, OperationField};
+use crate::cli::{Cli, Command, OperationField, StatusField};
 
 /// Return a list of warnings for flags that were explicitly set but have
 /// no effect on the chosen subcommand with the given arguments.
@@ -59,8 +59,13 @@ fn command_resolves_refs(cmd: &Command) -> bool {
         | Command::Tags { .. }
         | Command::Components { .. }
         | Command::Schemas { .. }
-        | Command::Search { .. }
-        | Command::Statuses { .. } => false,
+        | Command::Search { .. } => false,
+        Command::Statuses { include, .. } => include.iter().any(|f| {
+            matches!(
+                f,
+                StatusField::Schema | StatusField::Headers | StatusField::All
+            )
+        }),
         Command::Operations { include, .. } => include.iter().any(|f| {
             matches!(
                 f,
@@ -90,8 +95,7 @@ fn command_can_touch_refs(cmd: &Command) -> bool {
         | Command::Tags { .. }
         | Command::Components { .. }
         | Command::Schemas { .. }
-        | Command::Search { .. }
-        | Command::Statuses { .. } => false,
+        | Command::Search { .. } => false,
         _ => true,
     }
 }

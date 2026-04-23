@@ -403,6 +403,32 @@ fn statuses_dedupes_by_code() {
 }
 
 #[test]
+fn statuses_include_schema_resolves_refs() {
+    let v = run_json(&["statuses", PETSTORE_YAML, "--include", "schema"]);
+    let arr = v.as_array().unwrap();
+    let first = arr
+        .iter()
+        .find(|e| e["status"] == "200")
+        .expect("200 entry");
+    let schema = &first["schema"]["application/json"];
+    assert!(schema.get("$ref").is_none(), "ref should be inlined");
+    assert_eq!(schema["type"], "array");
+}
+
+#[test]
+fn statuses_include_skips_absent_fields() {
+    let v = run_json(&["statuses", PETSTORE_YAML, "--include", "headers,schema"]);
+    let arr = v.as_array().unwrap();
+    let only_desc = arr
+        .iter()
+        .find(|e| e["status"] == "201")
+        .expect("201 entry");
+    // 201 has no content and no headers in the fixture; neither key should appear.
+    assert!(only_desc.get("headers").is_none());
+    assert!(only_desc.get("schema").is_none());
+}
+
+#[test]
 fn responses_lists_every_operation() {
     let res = run_json(&["responses", PETSTORE_YAML]);
     let arr = res.as_array().unwrap();
