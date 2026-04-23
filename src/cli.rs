@@ -85,6 +85,7 @@ pub enum OperationField {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    // ---- meta / summary ----
     /// Show title, version, description, contact, license, servers.
     Info {
         #[arg(help = FILE_DOC)]
@@ -105,6 +106,61 @@ pub enum Command {
         #[arg(help = FILE_DOC)]
         file: String,
     },
+
+    // ---- drill-down (single entity) ----
+    /// Show a single operation with every field, $refs resolved.
+    ///
+    /// Two call shapes:
+    ///   oadig operation <ID> <FILE>            lookup by operationId
+    ///   oadig operation <FILE> -m GET -p /x    lookup by method + path
+    #[command(alias = "op")]
+    Operation {
+        /// Either `<ID> <FILE>` (two args) or `<FILE>` with -m/-p.
+        #[arg(num_args = 1..=2)]
+        args: Vec<String>,
+        /// HTTP method (use with -p). Required when no operationId is given.
+        #[arg(short = 'm', long, requires = "path")]
+        method: Option<String>,
+        /// Path template (use with -m).
+        #[arg(short = 'p', long, requires = "method")]
+        path: Option<String>,
+    },
+    /// Show the requestBody of a single operation, $refs resolved.
+    ///
+    /// Same call shapes as `operation`.
+    #[command(alias = "req")]
+    Request {
+        #[arg(num_args = 1..=2)]
+        args: Vec<String>,
+        #[arg(short = 'm', long, requires = "path")]
+        method: Option<String>,
+        #[arg(short = 'p', long, requires = "method")]
+        path: Option<String>,
+    },
+    /// Show the responses of a single operation, $refs resolved.
+    ///
+    /// Same call shapes as `operation`.
+    #[command(alias = "res")]
+    Response {
+        #[arg(num_args = 1..=2)]
+        args: Vec<String>,
+        #[arg(short = 'm', long, requires = "path")]
+        method: Option<String>,
+        #[arg(short = 'p', long, requires = "method")]
+        path: Option<String>,
+        /// Narrow to a single status code (e.g. 200).
+        #[arg(long)]
+        status: Option<String>,
+    },
+    /// Show a single component schema definition.
+    Schema {
+        /// Schema name from components.schemas.
+        name: String,
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
+
+    // ---- lists (plural) ----
     /// List path strings (keys of the `paths` object).
     Paths {
         #[arg(help = FILE_DOC)]
@@ -145,39 +201,18 @@ pub enum Command {
         #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
         exclude: Vec<OperationField>,
     },
-    /// Show a single operation with every field, $refs resolved.
-    ///
-    /// Two call shapes:
-    ///   oadig operation <ID> <FILE>            lookup by operationId
-    ///   oadig operation <FILE> -m GET -p /x    lookup by method + path
-    #[command(alias = "op")]
-    Operation {
-        /// Either `<ID> <FILE>` (two args) or `<FILE>` with -m/-p.
-        #[arg(num_args = 1..=2)]
-        args: Vec<String>,
-        /// HTTP method (use with -p). Required when no operationId is given.
-        #[arg(short = 'm', long, requires = "path")]
-        method: Option<String>,
-        /// Path template (use with -m).
-        #[arg(short = 'p', long, requires = "method")]
-        path: Option<String>,
-    },
     /// List requestBodies of operations that have one.
     Requests {
         #[arg(help = FILE_DOC)]
         file: String,
     },
-    /// Show the requestBody of a single operation, $refs resolved.
-    ///
-    /// Same call shapes as `operation`.
-    #[command(alias = "req")]
-    Request {
-        #[arg(num_args = 1..=2)]
-        args: Vec<String>,
-        #[arg(short = 'm', long, requires = "path")]
-        method: Option<String>,
-        #[arg(short = 'p', long, requires = "method")]
-        path: Option<String>,
+    /// List responses of every operation. Optionally narrow to one status.
+    Responses {
+        #[arg(help = FILE_DOC)]
+        file: String,
+        /// Narrow each entry to a single status code (e.g. 200).
+        #[arg(long)]
+        status: Option<String>,
     },
     /// List unique status codes used across the spec with a description.
     Statuses {
@@ -190,42 +225,6 @@ pub enum Command {
         /// Values: headers, schema, content, all.
         #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
         include: Vec<StatusField>,
-    },
-    /// List responses of every operation. Optionally narrow to one status.
-    Responses {
-        #[arg(help = FILE_DOC)]
-        file: String,
-        /// Narrow each entry to a single status code (e.g. 200).
-        #[arg(long)]
-        status: Option<String>,
-    },
-    /// Show the responses of a single operation, $refs resolved.
-    ///
-    /// Same call shapes as `operation`.
-    #[command(alias = "res")]
-    Response {
-        #[arg(num_args = 1..=2)]
-        args: Vec<String>,
-        #[arg(short = 'm', long, requires = "path")]
-        method: Option<String>,
-        #[arg(short = 'p', long, requires = "method")]
-        path: Option<String>,
-        /// Narrow to a single status code (e.g. 200).
-        #[arg(long)]
-        status: Option<String>,
-    },
-    /// Search string values in the spec for a keyword. Returns JSON Pointers.
-    Search {
-        /// Keyword or regex to match.
-        keyword: String,
-        #[arg(help = FILE_DOC)]
-        file: String,
-        /// Treat keyword as a regex instead of a substring.
-        #[arg(long)]
-        regex: bool,
-        /// Case-sensitive match (default: case-insensitive).
-        #[arg(long)]
-        case_sensitive: bool,
     },
     /// List declared and referenced tags with operation counts.
     Tags {
@@ -242,11 +241,19 @@ pub enum Command {
         #[arg(help = FILE_DOC)]
         file: String,
     },
-    /// Show a single component schema definition.
-    Schema {
-        /// Schema name from components.schemas.
-        name: String,
+
+    // ---- search ----
+    /// Search string values in the spec for a keyword. Returns JSON Pointers.
+    Search {
+        /// Keyword or regex to match.
+        keyword: String,
         #[arg(help = FILE_DOC)]
         file: String,
+        /// Treat keyword as a regex instead of a substring.
+        #[arg(long)]
+        regex: bool,
+        /// Case-sensitive match (default: case-insensitive).
+        #[arg(long)]
+        case_sensitive: bool,
     },
 }
