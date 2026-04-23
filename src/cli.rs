@@ -9,8 +9,9 @@ pub struct Cli {
     #[arg(long, value_enum, default_value_t = Format::Json, global = true)]
     pub format: Format,
 
-    #[arg(long, global = true)]
-    pub pretty: bool,
+    /// Compact JSON output (no-op for YAML). JSON is pretty by default.
+    #[arg(short = 'c', long, global = true)]
+    pub compact: bool,
 
     /// Resolve $ref inline (default). Use --no-resolve-refs to disable.
     #[arg(

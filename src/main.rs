@@ -41,7 +41,7 @@ fn main() -> Result<()> {
         }
     };
 
-    let text = output::render(&output, args.format, args.pretty)?;
+    let text = output::render(&output, args.format, args.compact)?;
     println!("{}", text);
     Ok(())
 }

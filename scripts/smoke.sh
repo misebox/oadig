@@ -13,13 +13,14 @@ run() {
   echo
 }
 
-run "info (yaml)"               info tests/fixtures/petstore.yaml --pretty
-run "stats (yaml)"              stats tests/fixtures/petstore.yaml --pretty
-run "paths (json)"              paths tests/fixtures/petstore.json --pretty
-run "schemas (yaml)"            schemas tests/fixtures/petstore.yaml --pretty
-run "schema Pets resolved"      schema Pets tests/fixtures/petstore.yaml --pretty
-run "schema Pets no-resolve"    schema Pets tests/fixtures/petstore.yaml --no-resolve-refs --pretty
-run "schema Node circular"      schema Node tests/fixtures/circular.yaml --pretty
+run "info (yaml)"               info tests/fixtures/petstore.yaml
+run "stats (yaml)"              stats tests/fixtures/petstore.yaml
+run "paths (json)"              paths tests/fixtures/petstore.json
+run "paths compact (-c)"        paths tests/fixtures/petstore.json -c
+run "schemas (yaml)"            schemas tests/fixtures/petstore.yaml
+run "schema Pets resolved"      schema Pets tests/fixtures/petstore.yaml
+run "schema Pets no-resolve"    schema Pets tests/fixtures/petstore.yaml --no-resolve-refs
+run "schema Node circular"      schema Node tests/fixtures/circular.yaml
 
 echo "=== info via stdin ==="
-cat tests/fixtures/petstore.json | cargo run --quiet -- info - --pretty
+cat tests/fixtures/petstore.json | cargo run --quiet -- info -
