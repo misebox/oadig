@@ -396,8 +396,8 @@ fn statuses_dedupes_by_code() {
     assert_eq!(
         v,
         json!([
-            { "200": { "description": "A paged array of pets" } },
-            { "201": { "description": "Null response" } }
+            { "status": "200", "description": "A paged array of pets" },
+            { "status": "201", "description": "Null response" }
         ])
     );
 }
