@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Tag a release. Does NOT push.
+# Tag and push a release.
 #
 # Usage:
-#   scripts/release.sh patch | minor | major    bump Cargo.toml, commit, tag
-#   scripts/release.sh --current                tag HEAD at the current version
-#   scripts/release.sh --dry-run <arg>          preview only
+#   scripts/release.sh patch | minor | major    bump Cargo.toml, commit, tag, push
+#   scripts/release.sh --current                tag HEAD at the current version, push
+#   scripts/release.sh --dry-run <arg>          preview only, no changes
 #   scripts/release.sh -y       <arg>           skip confirmation
+#   scripts/release.sh --no-push <arg>          stop after tagging, skip push
 #
 # `--current` is for bootstrap (first release) or unusual versions set by
 # hand (e.g. rc). Use patch/minor/major for routine bumps.
@@ -16,7 +17,7 @@ cd "$(dirname "$0")/.."
 die() { echo "error: $*" >&2; exit 1; }
 
 usage() {
-  sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//' >&2
+  sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//' >&2
   exit 2
 }
 
@@ -83,12 +84,14 @@ confirm() {
 # ---- args ----
 DRY_RUN=0
 YES=0
+PUSH=1
 MODE=""   # patch|minor|major|current
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run)   DRY_RUN=1 ;;
     -y|--yes)    YES=1 ;;
+    --no-push)   PUSH=0 ;;
     --current)   [ -z "$MODE" ] || die "too many args"; MODE="current" ;;
     -h|--help)   usage ;;
     -*)          die "unknown flag: $1" ;;
@@ -138,12 +141,15 @@ if [ "$MODE" != "current" ]; then
 fi
 git tag -a "${tag}" -m "Release ${tag}"
 
-cat <<EOF
+if [ "$PUSH" = 0 ]; then
+  echo
+  echo "Release ${tag} prepared locally (push skipped by --no-push)."
+  echo "To publish later: git push origin main \"${tag}\""
+  exit 0
+fi
 
-Release ${tag} prepared locally.
+echo "==> git push origin main ${tag}"
+git push origin main "${tag}"
 
-To publish, run:
-  git push origin main "${tag}"
-
-CI will build binaries and attach them to the GitHub Release.
-EOF
+echo
+echo "Release ${tag} published. CI will build binaries and attach them."
