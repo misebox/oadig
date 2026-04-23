@@ -6,7 +6,7 @@ semantic versioning (pre-1.0: each phase bumps minor).
 
 ## [Unreleased]
 
-## [0.2.0] — pending
+## [0.2.0] — 2026-04-24
 
 ### Added
 
