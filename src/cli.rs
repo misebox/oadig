@@ -176,6 +176,19 @@ pub enum Command {
         #[arg(long)]
         status: Option<String>,
     },
+    /// Search string values in the spec for a keyword. Returns JSON Pointers.
+    Search {
+        /// Keyword or regex to match.
+        keyword: String,
+        #[arg(help = FILE_DOC)]
+        file: String,
+        /// Treat keyword as a regex instead of a substring.
+        #[arg(long)]
+        regex: bool,
+        /// Case-sensitive match (default: case-insensitive).
+        #[arg(long)]
+        case_sensitive: bool,
+    },
     /// List declared and referenced tags with operation counts.
     Tags {
         #[arg(help = FILE_DOC)]

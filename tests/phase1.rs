@@ -370,6 +370,50 @@ fn operations_lines_format_one_entry_per_line() {
 }
 
 #[test]
+fn search_finds_substring_case_insensitive_by_default() {
+    let hits = run_json(&["search", "petstore", PETSTORE_YAML]);
+    let arr = hits.as_array().unwrap();
+    assert!(!arr.is_empty());
+    // info/title contains "Petstore" — case-insensitive substring should hit.
+    assert!(arr.iter().any(|h| h["pointer"] == "/info/title"));
+}
+
+#[test]
+fn search_case_sensitive_skips_case_mismatch() {
+    let insensitive = run_json(&["search", "petstore", PETSTORE_YAML]);
+    let sensitive = run_json(&["search", "petstore", PETSTORE_YAML, "--case-sensitive"]);
+    // "Petstore" matches in insensitive mode but not in sensitive mode.
+    let insensitive_titles: Vec<_> = insensitive
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|h| h["pointer"] == "/info/title")
+        .collect();
+    let sensitive_titles: Vec<_> = sensitive
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|h| h["pointer"] == "/info/title")
+        .collect();
+    assert_eq!(insensitive_titles.len(), 1);
+    assert!(sensitive_titles.is_empty());
+}
+
+#[test]
+fn search_regex_mode() {
+    let hits = run_json(&[
+        "search",
+        r"^List all pets$",
+        PETSTORE_YAML,
+        "--regex",
+        "--case-sensitive",
+    ]);
+    let arr = hits.as_array().unwrap();
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["pointer"], "/paths/~1pets/get/summary");
+}
+
+#[test]
 fn tags_lists_declared_with_operation_count() {
     let tags = run_json(&["tags", PETSTORE_YAML]);
     assert_eq!(

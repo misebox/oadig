@@ -11,6 +11,7 @@ pub mod response;
 pub mod responses;
 pub mod schema;
 pub mod schemas;
+pub mod search;
 pub mod stats;
 pub mod tags;
 
@@ -87,6 +88,12 @@ pub fn dispatch(
             status.as_deref(),
             opts,
         )?,
+        Command::Search {
+            keyword,
+            file,
+            regex,
+            case_sensitive,
+        } => search::run(&loader::load(file)?.value, keyword, *regex, *case_sensitive)?,
         Command::Tags { file } => tags::run(&loader::load(file)?.value),
         Command::Components { file } => components::run(&loader::load(file)?.value, show_null),
         Command::Schemas { file } => schemas::run(&loader::load(file)?.value),
