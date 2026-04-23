@@ -1,19 +1,27 @@
 use serde_json::{Map, Value};
 
 pub fn run(spec: &Value) -> Value {
-    let info = spec.get("info").cloned().unwrap_or(Value::Null);
-    let servers = spec.get("servers").cloned().unwrap_or(Value::Array(vec![]));
-    let openapi = spec.get("openapi").cloned().unwrap_or(Value::Null);
-
     let mut out = Map::new();
-    out.insert("openapi".into(), openapi);
-    if let Value::Object(info_obj) = info {
+
+    // Spec version: OpenAPI 3.x uses `openapi`, Swagger 2.0 uses `swagger`.
+    // Emit whichever is present; omit the key entirely if neither exists.
+    if let Some(v) = spec.get("openapi").filter(|v| !v.is_null()) {
+        out.insert("openapi".into(), v.clone());
+    } else if let Some(v) = spec.get("swagger").filter(|v| !v.is_null()) {
+        out.insert("swagger".into(), v.clone());
+    }
+
+    if let Some(Value::Object(info_obj)) = spec.get("info") {
         for key in ["title", "version", "description", "contact", "license"] {
-            if let Some(v) = info_obj.get(key) {
+            if let Some(v) = info_obj.get(key).filter(|v| !v.is_null()) {
                 out.insert(key.into(), v.clone());
             }
         }
     }
-    out.insert("servers".into(), servers);
+
+    if let Some(servers) = spec.get("servers").filter(|v| !v.is_null()) {
+        out.insert("servers".into(), servers.clone());
+    }
+
     Value::Object(out)
 }

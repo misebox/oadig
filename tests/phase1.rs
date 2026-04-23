@@ -20,6 +20,38 @@ fn run_json(args: &[&str]) -> Value {
 const PETSTORE_YAML: &str = "tests/fixtures/petstore.yaml";
 const PETSTORE_JSON: &str = "tests/fixtures/petstore.json";
 const CIRCULAR_YAML: &str = "tests/fixtures/circular.yaml";
+const SWAGGER2_YAML: &str = "tests/fixtures/swagger2.yaml";
+
+#[test]
+fn info_surfaces_swagger_version_for_v2_specs() {
+    let info = run_json(&["info", SWAGGER2_YAML]);
+    assert_eq!(info["swagger"], "2.0");
+    assert!(info.get("openapi").is_none());
+    assert_eq!(info["title"], "Legacy API");
+}
+
+#[test]
+fn info_omits_spec_version_key_when_missing() {
+    // Feed a minimal spec via stdin that has neither openapi nor swagger.
+    let out = bin()
+        .args(["info", "-"])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn");
+    use std::io::Write;
+    out.stdin
+        .as_ref()
+        .unwrap()
+        .write_all(b"info:\n  title: Orphan\n  version: \"0\"\n")
+        .unwrap();
+    let result = out.wait_with_output().unwrap();
+    assert!(result.status.success());
+    let value: Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert!(value.get("openapi").is_none());
+    assert!(value.get("swagger").is_none());
+    assert_eq!(value["title"], "Orphan");
+}
 
 #[test]
 fn info_yaml_and_json_match() {

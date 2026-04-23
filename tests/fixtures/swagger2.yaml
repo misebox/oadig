@@ -1,0 +1,17 @@
+swagger: "2.0"
+info:
+  title: Legacy API
+  version: "1.0.0"
+  description: Tiny Swagger 2.0 spec for regression testing.
+host: api.example.com
+basePath: /v1
+schemes:
+  - https
+paths:
+  /ping:
+    get:
+      summary: Ping
+      operationId: ping
+      responses:
+        "200":
+          description: OK
