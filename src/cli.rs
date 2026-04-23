@@ -120,6 +120,19 @@ pub enum Command {
         #[arg(short = 'p', long, conflicts_with = "id", requires = "method")]
         path: Option<String>,
     },
+    /// List requestBodies of operations that have one.
+    Requests {
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
+    /// List responses of every operation. Optionally narrow to one status.
+    Responses {
+        #[arg(help = FILE_DOC)]
+        file: String,
+        /// Narrow each entry to a single status code (e.g. 200).
+        #[arg(long)]
+        status: Option<String>,
+    },
     /// Show the requestBody of a single operation, $refs resolved.
     #[command(alias = "req")]
     Request {

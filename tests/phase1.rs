@@ -216,6 +216,42 @@ fn request_returns_null_when_missing() {
 }
 
 #[test]
+fn requests_lists_only_operations_with_body() {
+    let reqs = run_json(&["requests", PETSTORE_YAML]);
+    let arr = reqs.as_array().unwrap();
+    // Only POST /pets has a requestBody in the fixture.
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["method"], "POST");
+    assert_eq!(arr[0]["path"], "/pets");
+    // $ref to Pet should be inlined.
+    let schema = &arr[0]["request"]["content"]["application/json"]["schema"];
+    assert!(schema.get("$ref").is_none());
+    assert_eq!(schema["type"], "object");
+}
+
+#[test]
+fn responses_lists_every_operation() {
+    let res = run_json(&["responses", PETSTORE_YAML]);
+    let arr = res.as_array().unwrap();
+    assert_eq!(arr.len(), 3);
+    for entry in arr {
+        assert!(entry["responses"].is_object());
+    }
+}
+
+#[test]
+fn responses_narrows_by_status_and_drops_misses() {
+    let res = run_json(&["responses", PETSTORE_YAML, "--status", "201"]);
+    let arr = res.as_array().unwrap();
+    // Only POST /pets has a 201 in the fixture.
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["method"], "POST");
+    assert_eq!(arr[0]["path"], "/pets");
+    assert!(arr[0]["responses"]["201"].is_object());
+    assert!(arr[0]["responses"].get("200").is_none());
+}
+
+#[test]
 fn operations_lines_format_one_entry_per_line() {
     let out = bin()
         .args(["operations", PETSTORE_YAML, "--lines"])

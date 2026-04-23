@@ -22,7 +22,13 @@ run "operations --lines"        operations tests/fixtures/petstore.yaml --lines
 run "operations --include tags,operationId"  operations tests/fixtures/petstore.yaml --include tags,operationId
 run "operations --include all"               operations tests/fixtures/petstore.yaml --include all
 run "operations --exclude summary"           operations tests/fixtures/petstore.yaml --exclude summary
-run "endpoints alias"           endpoints tests/fixtures/petstore.yaml
+run "operation listPets"        operation tests/fixtures/petstore.yaml listPets
+run "operation -m GET -p /pets" operation tests/fixtures/petstore.yaml -m GET -p /pets
+run "request createPet"         request tests/fixtures/petstore.yaml createPet
+run "response listPets --status 200"  response tests/fixtures/petstore.yaml listPets --status 200
+run "requests"                  requests tests/fixtures/petstore.yaml
+run "responses"                 responses tests/fixtures/petstore.yaml
+run "responses --status 200"    responses tests/fixtures/petstore.yaml --status 200
 run "schemas (yaml)"            schemas tests/fixtures/petstore.yaml
 run "schema Pets resolved"      schema Pets tests/fixtures/petstore.yaml
 run "schema Pets no-resolve"    schema Pets tests/fixtures/petstore.yaml --no-resolve-refs

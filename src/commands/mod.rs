@@ -4,7 +4,9 @@ pub mod operations;
 pub mod overview;
 pub mod paths;
 pub mod request;
+pub mod requests;
 pub mod response;
+pub mod responses;
 pub mod schema;
 pub mod schemas;
 pub mod stats;
@@ -28,8 +30,8 @@ pub fn dispatch(command: &Command, opts: ResolveOptions) -> Result<Value, OadigE
             exclude,
         } => operations::run(&loader::load(file)?.value, include, exclude, opts),
         Command::Operation {
-            id,
             file,
+            id,
             method,
             path,
         } => operation::run(
@@ -39,9 +41,13 @@ pub fn dispatch(command: &Command, opts: ResolveOptions) -> Result<Value, OadigE
             path.as_deref(),
             opts,
         )?,
+        Command::Requests { file } => requests::run(&loader::load(file)?.value, opts),
+        Command::Responses { file, status } => {
+            responses::run(&loader::load(file)?.value, status.as_deref(), opts)
+        }
         Command::Request {
-            id,
             file,
+            id,
             method,
             path,
         } => request::run(
@@ -52,8 +58,8 @@ pub fn dispatch(command: &Command, opts: ResolveOptions) -> Result<Value, OadigE
             opts,
         )?,
         Command::Response {
-            id,
             file,
+            id,
             method,
             path,
             status,
