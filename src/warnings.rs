@@ -29,7 +29,7 @@ fn subcommand_name(cmd: &Command) -> &'static str {
     match cmd {
         Command::Info { .. } => "info",
         Command::Spec { .. } => "spec",
-        Command::Stats { .. } => "stats",
+        Command::Stat { .. } => "stat",
         Command::Overview { .. } => "overview",
         Command::Paths { .. } => "paths",
         Command::Operations { .. } => "operations",
@@ -53,7 +53,7 @@ fn command_resolves_refs(cmd: &Command) -> bool {
     match cmd {
         Command::Info { .. }
         | Command::Spec { .. }
-        | Command::Stats { .. }
+        | Command::Stat { .. }
         | Command::Overview { .. }
         | Command::Paths { .. }
         | Command::Tags { .. }
@@ -92,7 +92,7 @@ fn command_can_touch_refs(cmd: &Command) -> bool {
     match cmd {
         Command::Info { .. }
         | Command::Spec { .. }
-        | Command::Stats { .. }
+        | Command::Stat { .. }
         | Command::Overview { .. }
         | Command::Paths { .. }
         | Command::Tags { .. }

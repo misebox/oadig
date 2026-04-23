@@ -8,7 +8,7 @@ pub fn run(spec: &Value, show_null: bool) -> Value {
     let filter = OpFilter::from_strings(&[]).expect("empty filter list never fails");
     json!({
         "info": info::run(spec, show_null),
-        "stats": stats::run(spec),
+        "stat": stats::run(spec),
         "operations": operations::run(spec, &[], &[], &filter, ResolveOptions::default()),
     })
 }
