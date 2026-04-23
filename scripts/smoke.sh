@@ -19,9 +19,9 @@ run "stats (yaml)"              stats tests/fixtures/petstore.yaml
 run "paths (json)"              paths tests/fixtures/petstore.json
 run "operations (yaml)"         operations tests/fixtures/petstore.yaml
 run "operations --lines"        operations tests/fixtures/petstore.yaml --lines
-run "operations +tags,opId"     operations tests/fixtures/petstore.yaml --include tags,operationId
-run "operations --include all"  operations tests/fixtures/petstore.yaml --include all
-run "operations -summary"       operations tests/fixtures/petstore.yaml --exclude summary
+run "operations --include tags,operationId"  operations tests/fixtures/petstore.yaml --include tags,operationId
+run "operations --include all"               operations tests/fixtures/petstore.yaml --include all
+run "operations --exclude summary"           operations tests/fixtures/petstore.yaml --exclude summary
 run "endpoints alias"           endpoints tests/fixtures/petstore.yaml
 run "schemas (yaml)"            schemas tests/fixtures/petstore.yaml
 run "schema Pets resolved"      schema Pets tests/fixtures/petstore.yaml
