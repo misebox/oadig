@@ -208,13 +208,16 @@ fn project_field(
     spec: &Value,
     resolve_opts: ResolveOptions,
 ) -> Option<(&'static str, Value)> {
+    // Output key matches the OpenAPI spec key so a reader's intuition carries
+    // over. The `--include` CLI flag still uses shorter names (request,
+    // response) for convenience; only the emitted key differs.
     let (source_key, output_key) = match field {
         OperationField::Summary => ("summary", "summary"),
         OperationField::Description => ("description", "description"),
         OperationField::Tags => ("tags", "tags"),
         OperationField::Parameters => ("parameters", "parameters"),
-        OperationField::Request => ("requestBody", "request"),
-        OperationField::Response => ("responses", "response"),
+        OperationField::Request => ("requestBody", "requestBody"),
+        OperationField::Response => ("responses", "responses"),
         OperationField::Security => ("security", "security"),
         OperationField::Deprecated => ("deprecated", "deprecated"),
         OperationField::OperationId => ("operationId", "operationId"),

@@ -24,7 +24,7 @@ pub fn run(spec: &Value, opts: ResolveOptions) -> Value {
             let mut entry = Map::new();
             entry.insert("method".into(), Value::String(method.to_uppercase()));
             entry.insert("path".into(), Value::String(path.clone()));
-            entry.insert("request".into(), body);
+            entry.insert("requestBody".into(), body);
             out.push(Value::Object(entry));
         }
     }

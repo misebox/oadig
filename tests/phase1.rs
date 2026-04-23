@@ -275,7 +275,7 @@ fn operations_include_response_resolves_refs() {
         .find(|o| o["method"] == "GET" && o["path"] == "/pets")
         .unwrap();
     // response should be the responses map, with $ref to Pets resolved inline.
-    let schema = &get_pets["response"]["200"]["content"]["application/json"]["schema"];
+    let schema = &get_pets["responses"]["200"]["content"]["application/json"]["schema"];
     assert!(schema.get("$ref").is_none(), "ref should be resolved");
     assert_eq!(schema["type"], "array");
 }
@@ -385,7 +385,7 @@ fn requests_lists_only_operations_with_body() {
     assert_eq!(arr[0]["method"], "POST");
     assert_eq!(arr[0]["path"], "/pets");
     // $ref to Pet should be inlined.
-    let schema = &arr[0]["request"]["content"]["application/json"]["schema"];
+    let schema = &arr[0]["requestBody"]["content"]["application/json"]["schema"];
     assert!(schema.get("$ref").is_none());
     assert_eq!(schema["type"], "object");
 }
