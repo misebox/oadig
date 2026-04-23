@@ -82,9 +82,11 @@ pub fn dispatch(
                 opts,
             )?
         }
-        Command::Statuses { file, include } => {
-            statuses::run(&loader::load(file)?.value, include, opts)
-        }
+        Command::Statuses {
+            file,
+            include,
+            exclude,
+        } => statuses::run(&loader::load(file)?.value, include, exclude, opts),
         Command::Requests { file } => requests::run(&loader::load(file)?.value, opts),
         Command::Responses { file, status } => {
             responses::run(&loader::load(file)?.value, status.as_deref(), opts)

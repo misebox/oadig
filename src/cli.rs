@@ -72,6 +72,7 @@ pub enum SearchField {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ValueEnum)]
 #[value(rename_all = "camelCase")]
 pub enum StatusField {
+    Description,
     Headers,
     Schema,
     Content,
@@ -230,11 +231,14 @@ pub enum Command {
         file: String,
         /// Extra fields per entry.
         ///
-        /// Default: status, description.
+        /// Default: description. (`status` is always present.)
         ///
-        /// Values: headers, schema, content, all.
+        /// Values: description, headers, schema, content, all.
         #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
         include: Vec<StatusField>,
+        /// Fields to drop per entry. Same values as --include.
+        #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
+        exclude: Vec<StatusField>,
     },
     /// List declared and referenced tags with operation counts.
     Tags {

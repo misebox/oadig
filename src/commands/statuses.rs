@@ -7,6 +7,7 @@ use crate::commands::operations::{METHODS, resolve_in_place};
 use crate::resolver::ResolveOptions;
 
 const ALL_FIELDS: &[StatusField] = &[
+    StatusField::Description,
     StatusField::Headers,
     StatusField::Schema,
     StatusField::Content,
@@ -18,11 +19,16 @@ struct Entry {
 }
 
 // Walk every response map in the spec and return one flat record per
-// unique status code: `{status, description, ...}`. First occurrence
-// wins when multiple operations give the same status different
-// descriptions; the per-operation view is available via `responses`.
-pub fn run(spec: &Value, include: &[StatusField], opts: ResolveOptions) -> Value {
-    let fields = resolve_fields(include);
+// unique status code. First occurrence wins when multiple operations
+// give the same status different descriptions; the per-operation view
+// is available via `responses`.
+pub fn run(
+    spec: &Value,
+    include: &[StatusField],
+    exclude: &[StatusField],
+    opts: ResolveOptions,
+) -> Value {
+    let fields = resolve_fields(include, exclude);
 
     let mut seen: BTreeMap<String, Entry> = BTreeMap::new();
     if let Some(paths) = spec.get("paths").and_then(Value::as_object) {
@@ -54,13 +60,20 @@ pub fn run(spec: &Value, include: &[StatusField], opts: ResolveOptions) -> Value
     Value::Array(out)
 }
 
-fn resolve_fields(include: &[StatusField]) -> HashSet<StatusField> {
-    let mut fields = HashSet::new();
+fn resolve_fields(include: &[StatusField], exclude: &[StatusField]) -> HashSet<StatusField> {
+    let mut fields: HashSet<StatusField> = [StatusField::Description].into();
     for f in include {
         if *f == StatusField::All {
             fields.extend(ALL_FIELDS.iter().copied());
         } else {
             fields.insert(*f);
+        }
+    }
+    for f in exclude {
+        if *f == StatusField::All {
+            fields.clear();
+        } else {
+            fields.remove(f);
         }
     }
     fields
@@ -75,13 +88,15 @@ fn build_record(
 ) -> Value {
     let mut out = Map::new();
     out.insert("status".into(), Value::String(status.clone()));
-    out.insert("description".into(), entry.description);
 
     for field in ALL_FIELDS {
         if !fields.contains(field) {
             continue;
         }
         match field {
+            StatusField::Description => {
+                out.insert("description".into(), entry.description.clone());
+            }
             StatusField::Headers => {
                 if let Some(headers) = entry.response.get("headers").filter(|v| !v.is_null()) {
                     let origin = format!("#status/{}/headers", status);
