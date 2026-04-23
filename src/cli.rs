@@ -14,8 +14,13 @@ pub struct Cli {
     pub format: Format,
 
     /// Compact JSON output (no-op for YAML). JSON is pretty by default.
-    #[arg(short = 'c', long, global = true)]
+    #[arg(short = 'c', long, global = true, conflicts_with = "lines")]
     pub compact: bool,
+
+    /// JSON: top-level array on multiple lines, each element on one line.
+    /// Falls back to pretty for non-array values. No-op for YAML.
+    #[arg(short = 'l', long, global = true)]
+    pub lines: bool,
 
     /// Resolve $ref inline (default). Use --no-resolve-refs to disable.
     #[arg(
