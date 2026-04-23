@@ -175,10 +175,22 @@ fn build_entry(
     resolve_opts: ResolveOptions,
 ) -> Value {
     let mut entry = Map::new();
+
+    // operationId is the identity users drill down with, so it leads the
+    // record when present. Method and path always follow; projected fields
+    // come after in ALL_FIELDS order.
+    if fields.contains(&OperationField::OperationId)
+        && let Some(v) = op.get("operationId").filter(|v| v.is_string())
+    {
+        entry.insert("operationId".into(), v.clone());
+    }
     entry.insert("method".into(), Value::String(method.to_uppercase()));
     entry.insert("path".into(), Value::String(path.to_string()));
 
     for field in ALL_FIELDS {
+        if *field == OperationField::OperationId {
+            continue;
+        }
         if !fields.contains(field) {
             continue;
         }
