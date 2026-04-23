@@ -47,8 +47,8 @@ oadig paths openapi.yaml -c | jq '.[] | select(.method == "GET")'
 | Subcommand | Description |
 |---|---|
 | `info <file>` | title, version, description, contact, license, servers |
-| `overview <file>` | info + stat + paths combined |
-| `stat <file>` | path/operation/schema counts, by method and tag |
+| `overview <file>` | info + stats + paths combined |
+| `stats <file>` | path/operation/schema counts, by method and tag |
 | `paths <file>` | list of method + path pairs |
 | `schemas <file>` | list of component schema names |
 | `schema <name> <file>` | full detail of a named schema, with `$ref` resolved |

@@ -123,8 +123,8 @@ fn info_yaml_and_json_match() {
 }
 
 #[test]
-fn stat_counts_match_fixture() {
-    let stats = run_json(&["stat", PETSTORE_YAML]);
+fn stats_counts_match_fixture() {
+    let stats = run_json(&["stats", PETSTORE_YAML]);
     assert_eq!(stats["paths"], 2);
     assert_eq!(stats["operations"], 3);
     assert_eq!(stats["schemas"], 2);
@@ -714,10 +714,10 @@ fn schema_marks_circular_ref() {
 }
 
 #[test]
-fn overview_combines_info_stat_operations() {
+fn overview_combines_info_stats_operations() {
     let overview = run_json(&["overview", PETSTORE_YAML]);
     assert_eq!(overview["info"], run_json(&["info", PETSTORE_YAML]));
-    assert_eq!(overview["stat"], run_json(&["stat", PETSTORE_YAML]));
+    assert_eq!(overview["stats"], run_json(&["stats", PETSTORE_YAML]));
     assert_eq!(
         overview["operations"],
         run_json(&["operations", PETSTORE_YAML])

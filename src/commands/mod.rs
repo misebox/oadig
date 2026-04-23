@@ -58,7 +58,7 @@ pub fn dispatch(
         Command::Info { file } => info::run(&loader::load(file)?.value, show_null),
         Command::Spec { file } => spec_version::run(&loader::load(file)?.value),
         Command::Overview { file } => overview::run(&loader::load(file)?.value, show_null),
-        Command::Stat { file } => stats::run(&loader::load(file)?.value),
+        Command::Stats { file } => stats::run(&loader::load(file)?.value),
         Command::Paths { file, filters } => {
             let pf = filter::PathFilter::from_strings(filters)?;
             paths::run(&loader::load(file)?.value, &pf)

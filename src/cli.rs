@@ -109,11 +109,11 @@ pub enum Command {
         file: String,
     },
     /// Show counts: paths, operations, schemas, tags, methods.
-    Stat {
+    Stats {
         #[arg(help = FILE_DOC)]
         file: String,
     },
-    /// Combined info + stat + operations.
+    /// Combined info + stats + operations.
     Overview {
         #[arg(help = FILE_DOC)]
         file: String,
