@@ -4,6 +4,24 @@ use crate::commands::operations;
 use crate::error::OadigError;
 use crate::resolver::ResolveOptions;
 
+// Canonical order for the fields of an operation object.
+// Identifier/summary fields first; long prose and nested bodies later;
+// any remaining unknown keys (x-extensions, custom fields) at the end.
+const CANONICAL: &[&str] = &[
+    "operationId",
+    "summary",
+    "description",
+    "tags",
+    "parameters",
+    "requestBody",
+    "responses",
+    "callbacks",
+    "security",
+    "servers",
+    "deprecated",
+    "externalDocs",
+];
+
 pub fn run(
     spec: &Value,
     id: Option<&str>,
@@ -21,7 +39,13 @@ pub fn run(
         Value::String(located.method.to_uppercase()),
     );
     entry.insert("path".into(), Value::String(located.path.clone()));
-    if let Value::Object(obj) = resolved {
+
+    if let Value::Object(mut obj) = resolved {
+        for key in CANONICAL {
+            if let Some(v) = obj.shift_remove(*key) {
+                entry.insert((*key).into(), v);
+            }
+        }
         for (k, v) in obj {
             entry.insert(k, v);
         }

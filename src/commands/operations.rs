@@ -97,8 +97,10 @@ pub fn resolve_in_place(value: Value, spec: &Value, opts: ResolveOptions, origin
     Resolver::new(spec, opts).resolve(value, origin)
 }
 
-// Every concrete field (i.e. excluding the `All` meta-variant).
+// Every concrete field (i.e. excluding the `All` meta-variant), in the order
+// they should appear in output. Identifiers first, long prose later.
 const ALL_FIELDS: &[OperationField] = &[
+    OperationField::OperationId,
     OperationField::Summary,
     OperationField::Description,
     OperationField::Tags,
@@ -107,7 +109,6 @@ const ALL_FIELDS: &[OperationField] = &[
     OperationField::Response,
     OperationField::Security,
     OperationField::Deprecated,
-    OperationField::OperationId,
 ];
 
 pub fn run(
