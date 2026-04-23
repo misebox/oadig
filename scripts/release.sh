@@ -1,69 +1,141 @@
 #!/usr/bin/env bash
-# Bump Cargo.toml version, commit, and tag. Does NOT push (user pushes manually).
-# Usage: scripts/release.sh <version>     e.g. scripts/release.sh 0.1.0
+# Tag a release. Does NOT push.
+#
+# Usage:
+#   scripts/release.sh patch | minor | major    bump Cargo.toml, commit, tag
+#   scripts/release.sh --current                tag HEAD at the current version
+#   scripts/release.sh --dry-run <arg>          preview only
+#   scripts/release.sh -y       <arg>           skip confirmation
+#
+# `--current` is for bootstrap (first release) or unusual versions set by
+# hand (e.g. rc). Use patch/minor/major for routine bumps.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-if [ $# -ne 1 ]; then
-  echo "usage: scripts/release.sh <version>" >&2
+die() { echo "error: $*" >&2; exit 1; }
+
+usage() {
+  sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//' >&2
   exit 2
-fi
-version="$1"
+}
 
-if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-  echo "error: version must be semver (e.g. 0.1.0 or 0.1.0-rc.1), got: $version" >&2
-  exit 2
+current_version() {
+  awk '
+    /^\[/ && !/^\[package\]/ { in_pkg = 0 }
+    /^\[package\]/            { in_pkg = 1; next }
+    in_pkg && /^version[[:space:]]*=/ {
+      match($0, /"[^"]*"/)
+      print substr($0, RSTART + 1, RLENGTH - 2)
+      exit
+    }
+  ' Cargo.toml
+}
+
+next_version() {
+  local current="$1" bump="$2" base maj min pat
+  base="${current%%-*}"
+  IFS='.' read -r maj min pat <<<"$base"
+  case "$bump" in
+    patch) echo "${maj}.${min}.$((pat + 1))" ;;
+    minor) echo "${maj}.$((min + 1)).0" ;;
+    major) echo "$((maj + 1)).0.0" ;;
+    *)     die "bump must be patch, minor, or major (got: ${bump})" ;;
+  esac
+}
+
+write_version() {
+  local v="$1" tmp
+  tmp=$(mktemp)
+  awk -v v="$v" '
+    BEGIN { in_pkg = 0; done = 0 }
+    /^\[/ && !/^\[package\]/ { in_pkg = 0 }
+    /^\[package\]/            { in_pkg = 1; print; next }
+    in_pkg && !done && /^version[[:space:]]*=/ {
+      print "version = \"" v "\""
+      done = 1
+      next
+    }
+    { print }
+  ' Cargo.toml > "$tmp"
+  mv "$tmp" Cargo.toml
+}
+
+require_release_state() {
+  local branch
+  branch=$(git rev-parse --abbrev-ref HEAD)
+  [ "$branch" = "main" ] || die "must run on main (current: ${branch})"
+
+  git diff --quiet && git diff --cached --quiet || die "working tree is dirty"
+
+  git fetch --quiet origin main
+  [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] \
+    || die "local main is not in sync with origin/main"
+}
+
+confirm() {
+  [ "$YES" = 1 ] && return 0
+  local reply
+  read -r -p "$1 [y/N] " reply
+  [[ "$reply" =~ ^[Yy]$ ]]
+}
+
+# ---- args ----
+DRY_RUN=0
+YES=0
+MODE=""   # patch|minor|major|current
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run)   DRY_RUN=1 ;;
+    -y|--yes)    YES=1 ;;
+    --current)   [ -z "$MODE" ] || die "too many args"; MODE="current" ;;
+    -h|--help)   usage ;;
+    -*)          die "unknown flag: $1" ;;
+    *)           [ -z "$MODE" ] || die "too many args"; MODE="$1" ;;
+  esac
+  shift
+done
+[ -n "$MODE" ] || usage
+
+# ---- plan ----
+current=$(current_version)
+[ -n "$current" ] || die "could not read current version from Cargo.toml"
+if [ "$MODE" = "current" ]; then
+  next="$current"
+else
+  next=$(next_version "$current" "$MODE")
+fi
+tag="v${next}"
+
+git rev-parse -q --verify "refs/tags/${tag}" >/dev/null \
+  && die "tag ${tag} already exists" || true
+
+echo "current: ${current}"
+echo "next:    ${next}  (tag ${tag})"
+
+if [ "$DRY_RUN" = 1 ]; then
+  echo "(dry-run; no changes made)"
+  exit 0
 fi
 
-tag="v${version}"
-if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
-  echo "error: tag ${tag} already exists" >&2
-  exit 1
-fi
-
-branch=$(git rev-parse --abbrev-ref HEAD)
-if [ "$branch" != "main" ]; then
-  echo "error: releases must be cut from main (current: ${branch})" >&2
-  exit 1
-fi
-
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo "error: working tree is dirty" >&2
-  exit 1
-fi
-
-git fetch --quiet origin main
-if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
-  echo "error: local main is not in sync with origin/main" >&2
-  exit 1
-fi
+# ---- execute ----
+require_release_state
 
 echo "==> cargo fmt --check"
 cargo fmt --all -- --check
 echo "==> cargo test"
 cargo test --quiet
 
-# Bump version. Match only the [package] block by stopping at the next [section].
-tmp=$(mktemp)
-awk -v v="$version" '
-  BEGIN { in_pkg = 0; done = 0 }
-  /^\[package\]/ { in_pkg = 1; print; next }
-  /^\[/ && !/^\[package\]/ { in_pkg = 0 }
-  in_pkg && !done && /^version[[:space:]]*=/ {
-    print "version = \"" v "\""
-    done = 1
-    next
-  }
-  { print }
-' Cargo.toml > "$tmp"
-mv "$tmp" Cargo.toml
+confirm "Proceed with release?" || die "aborted"
 
-echo "==> cargo build (updates Cargo.lock)"
-cargo build --quiet
-
-git add Cargo.toml Cargo.lock
-git commit -m "Release ${tag}"
+if [ "$MODE" != "current" ]; then
+  write_version "$next"
+  echo "==> cargo build (updates Cargo.lock)"
+  cargo build --quiet
+  git add Cargo.toml Cargo.lock
+  git commit -m "Release ${tag}"
+fi
 git tag -a "${tag}" -m "Release ${tag}"
 
 cat <<EOF
