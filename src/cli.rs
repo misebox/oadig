@@ -97,14 +97,13 @@ pub enum OperationField {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    // ---- meta / summary ----
-    /// Show title, version, description, contact, license, servers.
-    Info {
+    /// Emit the spec version string (openapi 3.x or swagger 2.0).
+    Spec {
         #[arg(help = FILE_DOC)]
         file: String,
     },
-    /// Emit the spec version string (openapi 3.x or swagger 2.0).
-    Spec {
+    /// Show title, version, description, contact, license, servers.
+    Info {
         #[arg(help = FILE_DOC)]
         file: String,
     },
@@ -119,7 +118,6 @@ pub enum Command {
         file: String,
     },
 
-    // ---- drill-down (single entity) ----
     /// Show a single operation with every field, $refs resolved.
     ///
     /// Two call shapes:
