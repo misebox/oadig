@@ -137,19 +137,19 @@ pub enum Command {
     },
     /// Show a single operation with every field, $refs resolved.
     ///
-    /// Identify the operation by its operationId (positional) OR by
-    /// -m/--method and -p/--path. The two forms are mutually exclusive.
+    /// Two call shapes:
+    ///   oadig operation <ID> <FILE>            lookup by operationId
+    ///   oadig operation <FILE> -m GET -p /x    lookup by method + path
     #[command(alias = "op")]
     Operation {
-        #[arg(help = FILE_DOC)]
-        file: String,
-        /// operationId to look up.
-        id: Option<String>,
-        /// HTTP method (use with -p).
-        #[arg(short = 'm', long, conflicts_with = "id", requires = "path")]
+        /// Either `<ID> <FILE>` (two args) or `<FILE>` with -m/-p.
+        #[arg(num_args = 1..=2)]
+        args: Vec<String>,
+        /// HTTP method (use with -p). Required when no operationId is given.
+        #[arg(short = 'm', long, requires = "path")]
         method: Option<String>,
         /// Path template (use with -m).
-        #[arg(short = 'p', long, conflicts_with = "id", requires = "method")]
+        #[arg(short = 'p', long, requires = "method")]
         path: Option<String>,
     },
     /// List requestBodies of operations that have one.
@@ -158,15 +158,15 @@ pub enum Command {
         file: String,
     },
     /// Show the requestBody of a single operation, $refs resolved.
+    ///
+    /// Same call shapes as `operation`.
     #[command(alias = "req")]
     Request {
-        #[arg(help = FILE_DOC)]
-        file: String,
-        /// operationId to look up.
-        id: Option<String>,
-        #[arg(short = 'm', long, conflicts_with = "id", requires = "path")]
+        #[arg(num_args = 1..=2)]
+        args: Vec<String>,
+        #[arg(short = 'm', long, requires = "path")]
         method: Option<String>,
-        #[arg(short = 'p', long, conflicts_with = "id", requires = "method")]
+        #[arg(short = 'p', long, requires = "method")]
         path: Option<String>,
     },
     /// List responses of every operation. Optionally narrow to one status.
@@ -178,15 +178,15 @@ pub enum Command {
         status: Option<String>,
     },
     /// Show the responses of a single operation, $refs resolved.
+    ///
+    /// Same call shapes as `operation`.
     #[command(alias = "res")]
     Response {
-        #[arg(help = FILE_DOC)]
-        file: String,
-        /// operationId to look up.
-        id: Option<String>,
-        #[arg(short = 'm', long, conflicts_with = "id", requires = "path")]
+        #[arg(num_args = 1..=2)]
+        args: Vec<String>,
+        #[arg(short = 'm', long, requires = "path")]
         method: Option<String>,
-        #[arg(short = 'p', long, conflicts_with = "id", requires = "method")]
+        #[arg(short = 'p', long, requires = "method")]
         path: Option<String>,
         /// Narrow to a single status code (e.g. 200).
         #[arg(long)]

@@ -23,6 +23,31 @@ use crate::error::OadigError;
 use crate::loader;
 use crate::resolver::ResolveOptions;
 
+// `operation`/`request`/`response` accept either `<ID> <FILE>` or `<FILE>`
+// plus `-m/-p`. Split the positional list into (id, file) so the caller
+// doesn't re-derive the rules.
+fn split_positionals<'a>(
+    args: &'a [String],
+    method: &Option<String>,
+    path: &Option<String>,
+) -> Result<(Option<&'a str>, &'a str), OadigError> {
+    match args.len() {
+        2 => Ok((Some(args[0].as_str()), args[1].as_str())),
+        1 => {
+            if method.is_some() && path.is_some() {
+                Ok((None, args[0].as_str()))
+            } else {
+                Err(OadigError::Other(
+                    "specify either `<ID> <FILE>` or `<FILE> -m METHOD -p PATH`".to_string(),
+                ))
+            }
+        }
+        _ => Err(OadigError::Other(
+            "too many positional arguments".to_string(),
+        )),
+    }
+}
+
 pub fn dispatch(
     command: &Command,
     opts: ResolveOptions,
@@ -46,48 +71,46 @@ pub fn dispatch(
             let of = filter::OpFilter::from_strings(filters)?;
             operations::run(&loader::load(file)?.value, include, exclude, &of, opts)
         }
-        Command::Operation {
-            file,
-            id,
-            method,
-            path,
-        } => operation::run(
-            &loader::load(file)?.value,
-            id.as_deref(),
-            method.as_deref(),
-            path.as_deref(),
-            opts,
-        )?,
+        Command::Operation { args, method, path } => {
+            let (id, file) = split_positionals(args, method, path)?;
+            operation::run(
+                &loader::load(file)?.value,
+                id,
+                method.as_deref(),
+                path.as_deref(),
+                opts,
+            )?
+        }
         Command::Requests { file } => requests::run(&loader::load(file)?.value, opts),
         Command::Responses { file, status } => {
             responses::run(&loader::load(file)?.value, status.as_deref(), opts)
         }
-        Command::Request {
-            file,
-            id,
-            method,
-            path,
-        } => request::run(
-            &loader::load(file)?.value,
-            id.as_deref(),
-            method.as_deref(),
-            path.as_deref(),
-            opts,
-        )?,
+        Command::Request { args, method, path } => {
+            let (id, file) = split_positionals(args, method, path)?;
+            request::run(
+                &loader::load(file)?.value,
+                id,
+                method.as_deref(),
+                path.as_deref(),
+                opts,
+            )?
+        }
         Command::Response {
-            file,
-            id,
+            args,
             method,
             path,
             status,
-        } => response::run(
-            &loader::load(file)?.value,
-            id.as_deref(),
-            method.as_deref(),
-            path.as_deref(),
-            status.as_deref(),
-            opts,
-        )?,
+        } => {
+            let (id, file) = split_positionals(args, method, path)?;
+            response::run(
+                &loader::load(file)?.value,
+                id,
+                method.as_deref(),
+                path.as_deref(),
+                status.as_deref(),
+                opts,
+            )?
+        }
         Command::Search {
             keyword,
             file,

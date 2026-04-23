@@ -289,7 +289,7 @@ fn ops_alias_resolves_to_operations() {
 
 #[test]
 fn operation_lookup_by_id_shows_full_detail() {
-    let op = run_json(&["operation", PETSTORE_YAML, "listPets"]);
+    let op = run_json(&["operation", "listPets", PETSTORE_YAML]);
     assert_eq!(op["method"], "GET");
     assert_eq!(op["path"], "/pets");
     assert_eq!(op["operationId"], "listPets");
@@ -300,15 +300,15 @@ fn operation_lookup_by_id_shows_full_detail() {
 
 #[test]
 fn operation_lookup_by_method_and_path_matches_id() {
-    let by_id = run_json(&["operation", PETSTORE_YAML, "listPets"]);
+    let by_id = run_json(&["operation", "listPets", PETSTORE_YAML]);
     let by_mp = run_json(&["operation", PETSTORE_YAML, "-m", "GET", "-p", "/pets"]);
     assert_eq!(by_id, by_mp);
 }
 
 #[test]
 fn op_alias_resolves_to_operation() {
-    let from_alias = run_json(&["op", PETSTORE_YAML, "listPets"]);
-    let from_canonical = run_json(&["operation", PETSTORE_YAML, "listPets"]);
+    let from_alias = run_json(&["op", "listPets", PETSTORE_YAML]);
+    let from_canonical = run_json(&["operation", "listPets", PETSTORE_YAML]);
     assert_eq!(from_alias, from_canonical);
 }
 
@@ -322,7 +322,7 @@ fn operation_method_is_case_insensitive() {
 #[test]
 fn operation_id_not_found_errors() {
     let out = bin()
-        .args(["operation", PETSTORE_YAML, "nonexistent"])
+        .args(["operation", "nonexistent", PETSTORE_YAML])
         .output()
         .expect("spawn");
     assert!(!out.status.success());
@@ -344,41 +344,35 @@ fn operation_method_path_not_found_errors() {
 }
 
 #[test]
-fn operation_rejects_id_mixed_with_flags() {
+fn operation_requires_either_id_or_method_path() {
     let out = bin()
-        .args([
-            "operation",
-            PETSTORE_YAML,
-            "listPets",
-            "-m",
-            "GET",
-            "-p",
-            "/pets",
-        ])
+        .args(["operation", PETSTORE_YAML])
         .output()
         .expect("spawn");
     assert!(!out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("specify either"));
 }
 
 #[test]
 fn response_narrows_by_status() {
-    let all = run_json(&["response", PETSTORE_YAML, "listPets"]);
+    let all = run_json(&["response", "listPets", PETSTORE_YAML]);
     assert!(all.get("200").is_some());
-    let only_200 = run_json(&["response", PETSTORE_YAML, "listPets", "--status", "200"]);
+    let only_200 = run_json(&["response", "listPets", PETSTORE_YAML, "--status", "200"]);
     assert_eq!(only_200, all["200"]);
 }
 
 #[test]
 fn res_alias_resolves_to_response() {
-    let from_alias = run_json(&["res", PETSTORE_YAML, "listPets"]);
-    let from_canonical = run_json(&["response", PETSTORE_YAML, "listPets"]);
+    let from_alias = run_json(&["res", "listPets", PETSTORE_YAML]);
+    let from_canonical = run_json(&["response", "listPets", PETSTORE_YAML]);
     assert_eq!(from_alias, from_canonical);
 }
 
 #[test]
 fn request_returns_null_when_missing() {
     // petstore listPets has no requestBody
-    let req = run_json(&["request", PETSTORE_YAML, "listPets"]);
+    let req = run_json(&["request", "listPets", PETSTORE_YAML]);
     assert!(req.is_null());
 }
 
