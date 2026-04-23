@@ -63,6 +63,57 @@ fn operations_lists_method_path_summary() {
 }
 
 #[test]
+fn operations_include_adds_tags_and_operation_id() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--include", "tags,operationId"]);
+    let first = &ops[0];
+    assert_eq!(first["method"], "GET");
+    assert_eq!(first["path"], "/pets");
+    assert_eq!(first["summary"], "List all pets");
+    assert_eq!(first["tags"], json!(["pets"]));
+    assert_eq!(first["operationId"], "listPets");
+}
+
+#[test]
+fn operations_exclude_summary_drops_default_field() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--exclude", "summary"]);
+    for op in ops.as_array().unwrap() {
+        assert!(op.get("summary").is_none(), "summary should be excluded");
+        assert!(op["method"].is_string());
+        assert!(op["path"].is_string());
+    }
+}
+
+#[test]
+fn operations_include_all_covers_known_fields() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--include", "all"]);
+    // GET /pets has parameters in the fixture
+    let get_pets = ops
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|o| o["method"] == "GET" && o["path"] == "/pets")
+        .unwrap();
+    assert_eq!(get_pets["tags"], json!(["pets"]));
+    assert_eq!(get_pets["operationId"], "listPets");
+    assert!(get_pets["parameters"].is_array());
+}
+
+#[test]
+fn operations_include_response_resolves_refs() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--include", "response"]);
+    let get_pets = ops
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|o| o["method"] == "GET" && o["path"] == "/pets")
+        .unwrap();
+    // response should be the responses map, with $ref to Pets resolved inline.
+    let schema = &get_pets["response"]["200"]["content"]["application/json"]["schema"];
+    assert!(schema.get("$ref").is_none(), "ref should be resolved");
+    assert_eq!(schema["type"], "array");
+}
+
+#[test]
 fn endpoints_alias_resolves_to_operations() {
     let from_alias = run_json(&["endpoints", PETSTORE_YAML]);
     let from_canonical = run_json(&["operations", PETSTORE_YAML]);

@@ -50,6 +50,22 @@ pub enum Format {
     Yaml,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ValueEnum)]
+#[value(rename_all = "camelCase")]
+pub enum OperationField {
+    Summary,
+    Description,
+    Tags,
+    Parameters,
+    Request,
+    Response,
+    Security,
+    Deprecated,
+    OperationId,
+    /// Expands to every other field.
+    All,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Show title, version, description, contact, license, servers.
@@ -63,9 +79,17 @@ pub enum Command {
     Stats { file: String },
     /// List path strings (keys of the `paths` object).
     Paths { file: String },
-    /// List operations (method + path + summary).
+    /// List operations (method + path, with configurable extras).
     #[command(alias = "endpoints")]
-    Operations { file: String },
+    Operations {
+        file: String,
+        /// Extra fields to include in each entry. Default: summary.
+        #[arg(long, value_enum, value_delimiter = ',')]
+        include: Vec<OperationField>,
+        /// Fields to remove from each entry.
+        #[arg(long, value_enum, value_delimiter = ',')]
+        exclude: Vec<OperationField>,
+    },
     /// List component schema names.
     Schemas { file: String },
     /// Show a single component schema definition.

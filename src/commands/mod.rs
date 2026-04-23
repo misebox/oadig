@@ -19,7 +19,11 @@ pub fn dispatch(command: &Command, opts: ResolveOptions) -> Result<Value, OadigE
         Command::Overview { file } => overview::run(&loader::load(file)?.value),
         Command::Stats { file } => stats::run(&loader::load(file)?.value),
         Command::Paths { file } => paths::run(&loader::load(file)?.value),
-        Command::Operations { file } => operations::run(&loader::load(file)?.value),
+        Command::Operations {
+            file,
+            include,
+            exclude,
+        } => operations::run(&loader::load(file)?.value, include, exclude, opts),
         Command::Schemas { file } => schemas::run(&loader::load(file)?.value),
         Command::Schema { name, file } => schema::run(&loader::load(file)?.value, name, opts)?,
     })
