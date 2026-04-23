@@ -59,6 +59,18 @@ pub enum Format {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ValueEnum)]
 #[value(rename_all = "camelCase")]
+pub enum SearchField {
+    Pointer,
+    Path,
+    OperationRef,
+    At,
+    Value,
+    /// Expands to every other field.
+    All,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ValueEnum)]
+#[value(rename_all = "camelCase")]
 pub enum StatusField {
     Headers,
     Schema,
@@ -243,7 +255,7 @@ pub enum Command {
     },
 
     // ---- search ----
-    /// Search string values in the spec for a keyword. Returns JSON Pointers.
+    /// Search string values in the spec for a keyword.
     Search {
         /// Keyword or regex to match.
         keyword: String,
@@ -255,5 +267,17 @@ pub enum Command {
         /// Case-sensitive match (default: case-insensitive).
         #[arg(long)]
         case_sensitive: bool,
+        /// Extra fields per hit.
+        ///
+        /// Default: pointer, operationRef, at, value.
+        ///
+        /// Values: pointer, path, operationRef, at, value, all.
+        #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
+        include: Vec<SearchField>,
+        /// Fields to drop per hit.
+        ///
+        /// Same values as --include.
+        #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
+        exclude: Vec<SearchField>,
     },
 }

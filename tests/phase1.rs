@@ -496,6 +496,58 @@ fn search_finds_substring_case_insensitive_by_default() {
 }
 
 #[test]
+fn search_default_includes_operation_context() {
+    let hits = run_json(&["search", "List all pets", PETSTORE_YAML]);
+    let arr = hits.as_array().unwrap();
+    assert!(!arr.is_empty());
+    let h = &arr[0];
+    assert_eq!(h["operationRef"]["method"], "GET");
+    assert_eq!(h["operationRef"]["path"], "/pets");
+    assert_eq!(h["at"], json!(["summary"]));
+    assert_eq!(h["value"], "List all pets");
+    // path is opt-in, not in default set
+    assert!(h.get("path").is_none());
+}
+
+#[test]
+fn search_include_path_adds_token_array() {
+    let hits = run_json(&["search", "Petstore", PETSTORE_YAML, "--include", "path"]);
+    let info_hit = hits
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|h| h["pointer"] == "/info/title")
+        .unwrap();
+    assert_eq!(info_hit["path"], json!(["info", "title"]));
+}
+
+#[test]
+fn search_exclude_pointer_drops_field() {
+    let hits = run_json(&["search", "petstore", PETSTORE_YAML, "--exclude", "pointer"]);
+    for h in hits.as_array().unwrap() {
+        assert!(h.get("pointer").is_none());
+        assert!(h["value"].is_string());
+    }
+}
+
+#[test]
+fn search_hits_outside_operations_have_no_context() {
+    let hits = run_json(&["search", "Pet", PETSTORE_YAML]);
+    let components_hit = hits
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|h| {
+            h["pointer"]
+                .as_str()
+                .is_some_and(|p| p.starts_with("/components/"))
+        })
+        .expect("at least one components hit");
+    assert!(components_hit.get("operationRef").is_none());
+    assert!(components_hit.get("at").is_none());
+}
+
+#[test]
 fn search_case_sensitive_skips_case_mismatch() {
     let insensitive = run_json(&["search", "petstore", PETSTORE_YAML]);
     let sensitive = run_json(&["search", "petstore", PETSTORE_YAML, "--case-sensitive"]);
