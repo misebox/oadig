@@ -61,8 +61,11 @@ pub enum Command {
     Overview { file: String },
     /// Show counts: paths, operations, schemas, tags, methods.
     Stats { file: String },
-    /// List method + path pairs.
+    /// List path strings (keys of the `paths` object).
     Paths { file: String },
+    /// List operations (method + path + summary).
+    #[command(alias = "endpoints")]
+    Operations { file: String },
     /// List component schema names.
     Schemas { file: String },
     /// Show a single component schema definition.

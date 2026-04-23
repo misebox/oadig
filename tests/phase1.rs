@@ -46,14 +46,43 @@ fn stats_counts_match_fixture() {
 }
 
 #[test]
-fn paths_lists_all_operations() {
+fn paths_lists_unique_path_strings() {
     let paths = run_json(&["paths", PETSTORE_YAML]);
+    assert_eq!(paths, json!(["/pets", "/pets/{petId}"]));
+}
+
+#[test]
+fn operations_lists_method_path_summary() {
+    let ops = run_json(&["operations", PETSTORE_YAML]);
     let expected = json!([
-        { "method": "GET",  "path": "/pets" },
-        { "method": "POST", "path": "/pets" },
-        { "method": "GET",  "path": "/pets/{petId}" },
+        { "method": "GET",  "path": "/pets",         "summary": "List all pets" },
+        { "method": "POST", "path": "/pets",         "summary": "Create a pet" },
+        { "method": "GET",  "path": "/pets/{petId}", "summary": "Info for a specific pet" },
     ]);
-    assert_eq!(paths, expected);
+    assert_eq!(ops, expected);
+}
+
+#[test]
+fn endpoints_alias_resolves_to_operations() {
+    let from_alias = run_json(&["endpoints", PETSTORE_YAML]);
+    let from_canonical = run_json(&["operations", PETSTORE_YAML]);
+    assert_eq!(from_alias, from_canonical);
+}
+
+#[test]
+fn operations_lines_format_one_entry_per_line() {
+    let out = bin()
+        .args(["operations", PETSTORE_YAML, "--lines"])
+        .output()
+        .expect("spawn");
+    assert!(out.status.success());
+    let stdout = String::from_utf8(out.stdout).unwrap();
+    assert!(stdout.starts_with("[\n  {"));
+    assert!(stdout.trim_end().ends_with("}\n]"));
+    for line in stdout.lines().filter(|l| l.starts_with("  {")) {
+        assert!(line.contains("\"method\""));
+        assert!(line.contains("\"path\""));
+    }
 }
 
 #[test]
@@ -86,11 +115,14 @@ fn schema_marks_circular_ref() {
 }
 
 #[test]
-fn overview_combines_info_stats_paths() {
+fn overview_combines_info_stats_operations() {
     let overview = run_json(&["overview", PETSTORE_YAML]);
     assert_eq!(overview["info"], run_json(&["info", PETSTORE_YAML]));
     assert_eq!(overview["stats"], run_json(&["stats", PETSTORE_YAML]));
-    assert_eq!(overview["paths"], run_json(&["paths", PETSTORE_YAML]));
+    assert_eq!(
+        overview["operations"],
+        run_json(&["operations", PETSTORE_YAML])
+    );
 }
 
 #[test]

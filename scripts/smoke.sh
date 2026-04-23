@@ -17,7 +17,9 @@ run "info (yaml)"               info tests/fixtures/petstore.yaml
 run "overview (yaml)"           overview tests/fixtures/petstore.yaml
 run "stats (yaml)"              stats tests/fixtures/petstore.yaml
 run "paths (json)"              paths tests/fixtures/petstore.json
-run "paths compact (-c)"        paths tests/fixtures/petstore.json -c
+run "operations (yaml)"         operations tests/fixtures/petstore.yaml
+run "operations --lines"        operations tests/fixtures/petstore.yaml --lines
+run "endpoints alias"           endpoints tests/fixtures/petstore.yaml
 run "schemas (yaml)"            schemas tests/fixtures/petstore.yaml
 run "schema Pets resolved"      schema Pets tests/fixtures/petstore.yaml
 run "schema Pets no-resolve"    schema Pets tests/fixtures/petstore.yaml --no-resolve-refs
