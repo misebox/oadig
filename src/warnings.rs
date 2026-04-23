@@ -63,7 +63,10 @@ fn command_resolves_refs(cmd: &Command) -> bool {
         Command::Statuses { include, .. } => include.iter().any(|f| {
             matches!(
                 f,
-                StatusField::Schema | StatusField::Headers | StatusField::All
+                StatusField::Schema
+                    | StatusField::Headers
+                    | StatusField::Content
+                    | StatusField::All
             )
         }),
         Command::Operations { include, .. } => include.iter().any(|f| {

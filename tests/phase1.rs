@@ -413,6 +413,16 @@ fn statuses_include_schema_for_swagger2_uses_star_mediatype() {
 }
 
 #[test]
+fn statuses_include_content_returns_full_content_map() {
+    let v = run_json(&["statuses", PETSTORE_YAML, "--include", "content"]);
+    let arr = v.as_array().unwrap();
+    let first = arr.iter().find(|e| e["status"] == "200").unwrap();
+    let media = &first["content"]["application/json"];
+    // content includes media-type level fields beyond schema
+    assert!(media.get("schema").is_some());
+}
+
+#[test]
 fn statuses_include_schema_resolves_refs() {
     let v = run_json(&["statuses", PETSTORE_YAML, "--include", "schema"]);
     let arr = v.as_array().unwrap();

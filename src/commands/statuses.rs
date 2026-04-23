@@ -6,7 +6,11 @@ use crate::cli::StatusField;
 use crate::commands::operations::{METHODS, resolve_in_place};
 use crate::resolver::ResolveOptions;
 
-const ALL_FIELDS: &[StatusField] = &[StatusField::Headers, StatusField::Schema];
+const ALL_FIELDS: &[StatusField] = &[
+    StatusField::Headers,
+    StatusField::Schema,
+    StatusField::Content,
+];
 
 struct Entry {
     description: Value,
@@ -91,6 +95,16 @@ fn build_record(
                 let schemas = extract_schemas(&entry.response, spec, opts, &status);
                 if !schemas.is_empty() {
                     out.insert("schema".into(), Value::Object(schemas));
+                }
+            }
+            StatusField::Content => {
+                // OpenAPI 3.x only; Swagger 2.0 has no `content` block.
+                if let Some(content) = entry.response.get("content").filter(|v| !v.is_null()) {
+                    let origin = format!("#status/{}/content", status);
+                    out.insert(
+                        "content".into(),
+                        resolve_in_place(content.clone(), spec, opts, &origin),
+                    );
                 }
             }
             StatusField::All => {}

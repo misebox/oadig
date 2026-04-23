@@ -62,6 +62,7 @@ pub enum Format {
 pub enum StatusField {
     Headers,
     Schema,
+    Content,
     /// Expands to every other field.
     All,
 }
@@ -186,7 +187,7 @@ pub enum Command {
         ///
         /// Default: status, description.
         ///
-        /// Values: headers, schema, all.
+        /// Values: headers, schema, content, all.
         #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
         include: Vec<StatusField>,
     },
