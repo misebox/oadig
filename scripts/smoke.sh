@@ -22,6 +22,9 @@ run "operations --lines"        operations tests/fixtures/petstore.yaml --lines
 run "operations --include tags,operationId"  operations tests/fixtures/petstore.yaml --include tags,operationId
 run "operations --include all"               operations tests/fixtures/petstore.yaml --include all
 run "operations --exclude summary"           operations tests/fixtures/petstore.yaml --exclude summary
+run "operations --method GET"                operations tests/fixtures/petstore.yaml --method GET
+run "operations --path-filter petId"         operations tests/fixtures/petstore.yaml --path-filter petId
+run "operations --tag pets"                  operations tests/fixtures/petstore.yaml --tag pets
 run "operation listPets"        operation tests/fixtures/petstore.yaml listPets
 run "operation -m GET -p /pets" operation tests/fixtures/petstore.yaml -m GET -p /pets
 run "request createPet"         request tests/fixtures/petstore.yaml createPet

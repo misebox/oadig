@@ -1,4 +1,5 @@
 pub mod components;
+pub mod filter;
 pub mod info;
 pub mod operation;
 pub mod operations;
@@ -29,12 +30,21 @@ pub fn dispatch(
         Command::Info { file } => info::run(&loader::load(file)?.value, show_null),
         Command::Overview { file } => overview::run(&loader::load(file)?.value, show_null),
         Command::Stats { file } => stats::run(&loader::load(file)?.value),
-        Command::Paths { file } => paths::run(&loader::load(file)?.value),
+        Command::Paths { file, path_filter } => {
+            let pf = filter::PathFilter::new(path_filter.as_deref())?;
+            paths::run(&loader::load(file)?.value, &pf)
+        }
         Command::Operations {
             file,
             include,
             exclude,
-        } => operations::run(&loader::load(file)?.value, include, exclude, opts),
+            method,
+            path_filter,
+            tag,
+        } => {
+            let of = filter::OpFilter::new(method, path_filter.as_deref(), tag.as_deref())?;
+            operations::run(&loader::load(file)?.value, include, exclude, &of, opts)
+        }
         Command::Operation {
             file,
             id,

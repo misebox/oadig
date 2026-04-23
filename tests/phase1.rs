@@ -108,6 +108,52 @@ fn paths_lists_unique_path_strings() {
 }
 
 #[test]
+fn paths_filter_keeps_only_matches() {
+    let paths = run_json(&["paths", PETSTORE_YAML, "--path-filter", "petId"]);
+    assert_eq!(paths, json!(["/pets/{petId}"]));
+}
+
+#[test]
+fn operations_filter_by_method() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--method", "POST"]);
+    let arr = ops.as_array().unwrap();
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["method"], "POST");
+}
+
+#[test]
+fn operations_filter_by_multiple_methods() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--method", "GET,POST"]);
+    assert_eq!(ops.as_array().unwrap().len(), 3);
+}
+
+#[test]
+fn operations_filter_by_path_regex() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--path-filter", r"\{petId\}$"]);
+    let arr = ops.as_array().unwrap();
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["path"], "/pets/{petId}");
+}
+
+#[test]
+fn operations_filter_by_tag() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--tag", "pets"]);
+    assert_eq!(ops.as_array().unwrap().len(), 3);
+    let none = run_json(&["operations", PETSTORE_YAML, "--tag", "nonexistent"]);
+    assert!(none.as_array().unwrap().is_empty());
+}
+
+#[test]
+fn operations_filter_rejects_invalid_regex() {
+    let out = bin()
+        .args(["operations", PETSTORE_YAML, "--path-filter", "[bad"])
+        .output()
+        .expect("spawn");
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("invalid regex"));
+}
+
+#[test]
 fn operations_lists_method_path_summary() {
     let ops = run_json(&["operations", PETSTORE_YAML]);
     let expected = json!([

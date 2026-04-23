@@ -94,6 +94,9 @@ pub enum Command {
     Paths {
         #[arg(help = FILE_DOC)]
         file: String,
+        /// Keep only paths matching this regex.
+        #[arg(long)]
+        path_filter: Option<String>,
     },
     /// List operations (method + path, with configurable extras).
     #[command(alias = "ops")]
@@ -106,6 +109,15 @@ pub enum Command {
         /// Fields to remove from each entry.
         #[arg(long, value_enum, value_delimiter = ',')]
         exclude: Vec<OperationField>,
+        /// Keep only operations with these HTTP methods (comma-separated).
+        #[arg(short = 'm', long, value_delimiter = ',')]
+        method: Vec<String>,
+        /// Keep only operations whose path matches this regex.
+        #[arg(long)]
+        path_filter: Option<String>,
+        /// Keep only operations tagged with this name.
+        #[arg(long)]
+        tag: Option<String>,
     },
     /// Show a single operation with every field, $refs resolved.
     ///

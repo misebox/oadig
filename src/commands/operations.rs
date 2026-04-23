@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use serde_json::{Map, Value};
 
 use crate::cli::OperationField;
+use crate::commands::filter::OpFilter;
 use crate::error::OadigError;
 use crate::resolver::{ResolveOptions, Resolver};
 
@@ -115,6 +116,7 @@ pub fn run(
     spec: &Value,
     include: &[OperationField],
     exclude: &[OperationField],
+    filter: &OpFilter,
     resolve_opts: ResolveOptions,
 ) -> Value {
     let fields = resolve_fields(include, exclude);
@@ -132,6 +134,9 @@ pub fn run(
             let Some(op) = item_obj.get(*method) else {
                 continue;
             };
+            if !filter.accepts(method, path, op) {
+                continue;
+            }
             out.push(build_entry(method, path, op, &fields, spec, resolve_opts));
         }
     }
