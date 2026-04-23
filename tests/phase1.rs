@@ -403,6 +403,16 @@ fn statuses_dedupes_by_code() {
 }
 
 #[test]
+fn statuses_include_schema_for_swagger2_uses_star_mediatype() {
+    let v = run_json(&["statuses", SWAGGER2_YAML, "--include", "schema"]);
+    let arr = v.as_array().unwrap();
+    let first = arr.iter().find(|e| e["status"] == "200").unwrap();
+    let schema = &first["schema"]["*/*"];
+    assert_eq!(schema["type"], "object");
+    assert_eq!(schema["properties"]["ok"]["type"], "boolean");
+}
+
+#[test]
 fn statuses_include_schema_resolves_refs() {
     let v = run_json(&["statuses", PETSTORE_YAML, "--include", "schema"]);
     let arr = v.as_array().unwrap();

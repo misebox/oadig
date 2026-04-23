@@ -99,27 +99,38 @@ fn build_record(
     Value::Object(out)
 }
 
-// Build a `{<mediaType>: <schema>}` map from a response's `content`.
-// Empty map if no content or no schemas.
+// Build a `{<mediaType>: <schema>}` map from a response. Prefers
+// OpenAPI 3.x `response.content.<mediaType>.schema`; falls back to
+// Swagger 2.0's bare `response.schema`, keyed as `*/*` since that form
+// carries no media type.
 fn extract_schemas(
     response: &Value,
     spec: &Value,
     opts: ResolveOptions,
     status: &str,
 ) -> Map<String, Value> {
-    let Some(content) = response.get("content").and_then(Value::as_object) else {
-        return Map::new();
-    };
-    let mut out = Map::new();
-    for (media_type, media) in content {
-        let Some(schema) = media.get("schema").filter(|v| !v.is_null()) else {
-            continue;
-        };
-        let origin = format!("#status/{}/schema/{}", status, media_type);
+    if let Some(content) = response.get("content").and_then(Value::as_object) {
+        let mut out = Map::new();
+        for (media_type, media) in content {
+            let Some(schema) = media.get("schema").filter(|v| !v.is_null()) else {
+                continue;
+            };
+            let origin = format!("#status/{}/schema/{}", status, media_type);
+            out.insert(
+                media_type.clone(),
+                resolve_in_place(schema.clone(), spec, opts, &origin),
+            );
+        }
+        return out;
+    }
+    if let Some(schema) = response.get("schema").filter(|v| !v.is_null()) {
+        let origin = format!("#status/{}/schema", status);
+        let mut out = Map::new();
         out.insert(
-            media_type.clone(),
+            "*/*".into(),
             resolve_in_place(schema.clone(), spec, opts, &origin),
         );
+        return out;
     }
-    out
+    Map::new()
 }
