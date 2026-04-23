@@ -124,7 +124,7 @@ pub enum Command {
     /// Two call shapes:
     ///   oadig operation <ID> <FILE>            lookup by operationId
     ///   oadig operation <FILE> -m GET -p /x    lookup by method + path
-    #[command(alias = "op")]
+    #[command(alias = "op", verbatim_doc_comment)]
     Operation {
         /// Either `<ID> <FILE>` (two args) or `<FILE>` with -m/-p.
         #[arg(num_args = 1..=2)]
@@ -138,25 +138,35 @@ pub enum Command {
     },
     /// Show the requestBody of a single operation, $refs resolved.
     ///
-    /// Same call shapes as `operation`.
-    #[command(alias = "req")]
+    /// Two call shapes:
+    ///   oadig request <ID> <FILE>            lookup by operationId
+    ///   oadig request <FILE> -m POST -p /x   lookup by method + path
+    #[command(alias = "req", verbatim_doc_comment)]
     Request {
+        /// Either `<ID> <FILE>` (two args) or `<FILE>` with -m/-p.
         #[arg(num_args = 1..=2)]
         args: Vec<String>,
+        /// HTTP method (use with -p). Required when no operationId is given.
         #[arg(short = 'm', long, requires = "path")]
         method: Option<String>,
+        /// Path template (use with -m).
         #[arg(short = 'p', long, requires = "method")]
         path: Option<String>,
     },
     /// Show the responses of a single operation, $refs resolved.
     ///
-    /// Same call shapes as `operation`.
-    #[command(alias = "res")]
+    /// Two call shapes:
+    ///   oadig response <ID> <FILE>           lookup by operationId
+    ///   oadig response <FILE> -m GET -p /x   lookup by method + path
+    #[command(alias = "res", verbatim_doc_comment)]
     Response {
+        /// Either `<ID> <FILE>` (two args) or `<FILE>` with -m/-p.
         #[arg(num_args = 1..=2)]
         args: Vec<String>,
+        /// HTTP method (use with -p). Required when no operationId is given.
         #[arg(short = 'm', long, requires = "path")]
         method: Option<String>,
+        /// Path template (use with -m).
         #[arg(short = 'p', long, requires = "method")]
         path: Option<String>,
         /// Narrow to a single status code (e.g. 200).
