@@ -1,0 +1,14 @@
+# Rust
+/target
+**/*.rs.bk
+Cargo.lock.bak
+
+# Working area (local only)
+tmp/
+
+# OS / editor
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
