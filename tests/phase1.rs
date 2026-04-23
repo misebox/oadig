@@ -23,6 +23,30 @@ const CIRCULAR_YAML: &str = "tests/fixtures/circular.yaml";
 const SWAGGER2_YAML: &str = "tests/fixtures/swagger2.yaml";
 
 #[test]
+fn info_show_null_fills_missing_keys() {
+    let out = bin()
+        .args(["info", "-", "--show-null"])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn");
+    use std::io::Write;
+    out.stdin
+        .as_ref()
+        .unwrap()
+        .write_all(b"info:\n  title: Orphan\n  version: \"0\"\n")
+        .unwrap();
+    let result = out.wait_with_output().unwrap();
+    assert!(result.status.success());
+    let value: Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert!(value["openapi"].is_null());
+    assert!(value["description"].is_null());
+    assert!(value["contact"].is_null());
+    assert!(value["license"].is_null());
+    assert!(value["servers"].is_null());
+}
+
+#[test]
 fn info_surfaces_swagger_version_for_v2_specs() {
     let info = run_json(&["info", SWAGGER2_YAML]);
     assert_eq!(info["swagger"], "2.0");

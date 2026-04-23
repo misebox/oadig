@@ -39,6 +39,10 @@ pub struct Cli {
 
     #[arg(long, global = true)]
     pub max_depth: Option<usize>,
+
+    /// Emit `null` for expected-but-absent fields instead of omitting the key.
+    #[arg(long, global = true)]
+    pub show_null: bool,
 }
 
 impl Cli {

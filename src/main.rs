@@ -25,7 +25,7 @@ fn main() -> Result<()> {
     } else {
         Display::Pretty
     };
-    let value = commands::dispatch(&args.command, opts)?;
+    let value = commands::dispatch(&args.command, opts, args.show_null)?;
     println!("{}", output::render(&value, args.format, display)?);
     Ok(())
 }

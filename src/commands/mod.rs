@@ -18,10 +18,14 @@ use crate::error::OadigError;
 use crate::loader;
 use crate::resolver::ResolveOptions;
 
-pub fn dispatch(command: &Command, opts: ResolveOptions) -> Result<Value, OadigError> {
+pub fn dispatch(
+    command: &Command,
+    opts: ResolveOptions,
+    show_null: bool,
+) -> Result<Value, OadigError> {
     Ok(match command {
-        Command::Info { file } => info::run(&loader::load(file)?.value),
-        Command::Overview { file } => overview::run(&loader::load(file)?.value),
+        Command::Info { file } => info::run(&loader::load(file)?.value, show_null),
+        Command::Overview { file } => overview::run(&loader::load(file)?.value, show_null),
         Command::Stats { file } => stats::run(&loader::load(file)?.value),
         Command::Paths { file } => paths::run(&loader::load(file)?.value),
         Command::Operations {
