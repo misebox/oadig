@@ -164,6 +164,16 @@ pub enum Command {
         #[arg(long)]
         status: Option<String>,
     },
+    /// List declared and referenced tags with operation counts.
+    Tags {
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
+    /// Show component sections and the names defined in each.
+    Components {
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
     /// List component schema names.
     Schemas {
         #[arg(help = FILE_DOC)]

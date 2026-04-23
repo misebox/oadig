@@ -1,3 +1,4 @@
+pub mod components;
 pub mod info;
 pub mod operation;
 pub mod operations;
@@ -10,6 +11,7 @@ pub mod responses;
 pub mod schema;
 pub mod schemas;
 pub mod stats;
+pub mod tags;
 
 use serde_json::Value;
 
@@ -75,6 +77,8 @@ pub fn dispatch(
             status.as_deref(),
             opts,
         )?,
+        Command::Tags { file } => tags::run(&loader::load(file)?.value),
+        Command::Components { file } => components::run(&loader::load(file)?.value, show_null),
         Command::Schemas { file } => schemas::run(&loader::load(file)?.value),
         Command::Schema { name, file } => schema::run(&loader::load(file)?.value, name, opts)?,
     })

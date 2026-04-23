@@ -324,6 +324,44 @@ fn operations_lines_format_one_entry_per_line() {
 }
 
 #[test]
+fn tags_lists_declared_with_operation_count() {
+    let tags = run_json(&["tags", PETSTORE_YAML]);
+    assert_eq!(
+        tags,
+        json!([
+            { "name": "pets", "description": "Everything about pets", "operationCount": 3 }
+        ])
+    );
+}
+
+#[test]
+fn components_shows_only_populated_sections_by_default() {
+    let components = run_json(&["components", PETSTORE_YAML]);
+    assert_eq!(components["schemas"], json!(["Pet", "Pets"]));
+    assert!(components.get("responses").is_none());
+    assert!(components.get("parameters").is_none());
+}
+
+#[test]
+fn components_show_null_emits_every_section() {
+    let components = run_json(&["components", PETSTORE_YAML, "--show-null"]);
+    for section in [
+        "schemas",
+        "responses",
+        "parameters",
+        "examples",
+        "requestBodies",
+        "headers",
+        "securitySchemes",
+        "links",
+        "callbacks",
+        "pathItems",
+    ] {
+        assert!(components[section].is_array(), "missing section: {section}");
+    }
+}
+
+#[test]
 fn schemas_lists_names() {
     let schemas = run_json(&["schemas", PETSTORE_YAML]);
     assert_eq!(schemas, json!(["Pet", "Pets"]));

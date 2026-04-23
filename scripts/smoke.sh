@@ -29,6 +29,8 @@ run "response listPets --status 200"  response tests/fixtures/petstore.yaml list
 run "requests"                  requests tests/fixtures/petstore.yaml
 run "responses"                 responses tests/fixtures/petstore.yaml
 run "responses --status 200"    responses tests/fixtures/petstore.yaml --status 200
+run "tags"                      tags tests/fixtures/petstore.yaml
+run "components"                components tests/fixtures/petstore.yaml
 run "schemas (yaml)"            schemas tests/fixtures/petstore.yaml
 run "schema Pets resolved"      schema Pets tests/fixtures/petstore.yaml
 run "schema Pets no-resolve"    schema Pets tests/fixtures/petstore.yaml --no-resolve-refs
