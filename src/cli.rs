@@ -103,11 +103,12 @@ pub enum Command {
     Operations {
         #[arg(help = FILE_DOC)]
         file: String,
-        /// Extra fields to include in each entry. Default: summary.
-        #[arg(long, value_enum, value_delimiter = ',')]
+        /// Extra fields per entry. Default: summary.
+        /// Values: summary, description, tags, parameters, request, response, security, deprecated, operationId, all.
+        #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
         include: Vec<OperationField>,
-        /// Fields to remove from each entry.
-        #[arg(long, value_enum, value_delimiter = ',')]
+        /// Fields to remove per entry. Same values as --include.
+        #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
         exclude: Vec<OperationField>,
         /// Keep only operations with these HTTP methods (comma-separated).
         #[arg(short = 'm', long, value_delimiter = ',')]
