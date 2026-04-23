@@ -14,6 +14,7 @@ pub mod schemas;
 pub mod search;
 pub mod spec_version;
 pub mod stats;
+pub mod statuses;
 pub mod tags;
 
 use serde_json::Value;
@@ -81,6 +82,7 @@ pub fn dispatch(
                 opts,
             )?
         }
+        Command::Statuses { file } => statuses::run(&loader::load(file)?.value),
         Command::Requests { file } => requests::run(&loader::load(file)?.value, opts),
         Command::Responses { file, status } => {
             responses::run(&loader::load(file)?.value, status.as_deref(), opts)

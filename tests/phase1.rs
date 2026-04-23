@@ -391,6 +391,18 @@ fn requests_lists_only_operations_with_body() {
 }
 
 #[test]
+fn statuses_dedupes_by_code() {
+    let v = run_json(&["statuses", PETSTORE_YAML]);
+    assert_eq!(
+        v,
+        json!([
+            { "200": { "description": "A paged array of pets" } },
+            { "201": { "description": "Null response" } }
+        ])
+    );
+}
+
+#[test]
 fn responses_lists_every_operation() {
     let res = run_json(&["responses", PETSTORE_YAML]);
     let arr = res.as_array().unwrap();

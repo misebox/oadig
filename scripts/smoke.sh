@@ -33,6 +33,7 @@ run "request createPet"         request createPet tests/fixtures/petstore.yaml
 run "response listPets --status 200"  response listPets tests/fixtures/petstore.yaml --status 200
 run "requests"                  requests tests/fixtures/petstore.yaml
 run "responses"                 responses tests/fixtures/petstore.yaml
+run "statuses"                  statuses tests/fixtures/petstore.yaml
 run "responses --status 200"    responses tests/fixtures/petstore.yaml --status 200
 run "search Pet --lines"        search Pet tests/fixtures/petstore.yaml --lines
 run "tags"                      tags tests/fixtures/petstore.yaml

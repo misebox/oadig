@@ -169,6 +169,11 @@ pub enum Command {
         #[arg(short = 'p', long, requires = "method")]
         path: Option<String>,
     },
+    /// List unique status codes used across the spec with a description.
+    Statuses {
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
     /// List responses of every operation. Optionally narrow to one status.
     Responses {
         #[arg(help = FILE_DOC)]
