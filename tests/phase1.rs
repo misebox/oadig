@@ -108,8 +108,14 @@ fn paths_lists_unique_path_strings() {
 }
 
 #[test]
-fn paths_filter_keeps_only_matches() {
-    let paths = run_json(&["paths", PETSTORE_YAML, "--path-filter", "petId"]);
+fn paths_filter_keeps_only_matches_by_substring() {
+    let paths = run_json(&["paths", PETSTORE_YAML, "--filter", "petId"]);
+    assert_eq!(paths, json!(["/pets/{petId}"]));
+}
+
+#[test]
+fn paths_filter_by_prefix() {
+    let paths = run_json(&["paths", PETSTORE_YAML, "--prefix", "/pets/"]);
     assert_eq!(paths, json!(["/pets/{petId}"]));
 }
 
@@ -128,8 +134,31 @@ fn operations_filter_by_multiple_methods() {
 }
 
 #[test]
-fn operations_filter_by_path_regex() {
-    let ops = run_json(&["operations", PETSTORE_YAML, "--path-filter", r"\{petId\}$"]);
+fn operations_filter_by_path_substring() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--filter", "petId"]);
+    let arr = ops.as_array().unwrap();
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["path"], "/pets/{petId}");
+}
+
+#[test]
+fn operations_filter_by_prefix() {
+    let ops = run_json(&["operations", PETSTORE_YAML, "--prefix", "/pets/"]);
+    let arr = ops.as_array().unwrap();
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["path"], "/pets/{petId}");
+}
+
+#[test]
+fn operations_filter_combines_substring_and_prefix_as_and() {
+    let ops = run_json(&[
+        "operations",
+        PETSTORE_YAML,
+        "--prefix",
+        "/pets",
+        "--filter",
+        "petId",
+    ]);
     let arr = ops.as_array().unwrap();
     assert_eq!(arr.len(), 1);
     assert_eq!(arr[0]["path"], "/pets/{petId}");
@@ -141,16 +170,6 @@ fn operations_filter_by_tag() {
     assert_eq!(ops.as_array().unwrap().len(), 3);
     let none = run_json(&["operations", PETSTORE_YAML, "--tag", "nonexistent"]);
     assert!(none.as_array().unwrap().is_empty());
-}
-
-#[test]
-fn operations_filter_rejects_invalid_regex() {
-    let out = bin()
-        .args(["operations", PETSTORE_YAML, "--path-filter", "[bad"])
-        .output()
-        .expect("spawn");
-    assert!(!out.status.success());
-    assert!(String::from_utf8_lossy(&out.stderr).contains("invalid regex"));
 }
 
 #[test]

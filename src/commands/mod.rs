@@ -31,8 +31,12 @@ pub fn dispatch(
         Command::Info { file } => info::run(&loader::load(file)?.value, show_null),
         Command::Overview { file } => overview::run(&loader::load(file)?.value, show_null),
         Command::Stats { file } => stats::run(&loader::load(file)?.value),
-        Command::Paths { file, path_filter } => {
-            let pf = filter::PathFilter::new(path_filter.as_deref())?;
+        Command::Paths {
+            file,
+            filter: contains,
+            prefix,
+        } => {
+            let pf = filter::PathFilter::new(contains.as_deref(), prefix.as_deref());
             paths::run(&loader::load(file)?.value, &pf)
         }
         Command::Operations {
@@ -40,10 +44,16 @@ pub fn dispatch(
             include,
             exclude,
             method,
-            path_filter,
+            filter: contains,
+            prefix,
             tag,
         } => {
-            let of = filter::OpFilter::new(method, path_filter.as_deref(), tag.as_deref())?;
+            let of = filter::OpFilter::new(
+                method,
+                contains.as_deref(),
+                prefix.as_deref(),
+                tag.as_deref(),
+            );
             operations::run(&loader::load(file)?.value, include, exclude, &of, opts)
         }
         Command::Operation {

@@ -94,9 +94,12 @@ pub enum Command {
     Paths {
         #[arg(help = FILE_DOC)]
         file: String,
-        /// Keep only paths matching this regex.
+        /// Keep only paths that contain this substring.
         #[arg(long)]
-        path_filter: Option<String>,
+        filter: Option<String>,
+        /// Keep only paths that start with this prefix.
+        #[arg(long)]
+        prefix: Option<String>,
     },
     /// List operations (method + path, with configurable extras).
     #[command(alias = "ops")]
@@ -106,9 +109,12 @@ pub enum Command {
         /// Keep only operations with these HTTP methods (comma-separated).
         #[arg(short = 'm', long, value_delimiter = ',')]
         method: Vec<String>,
-        /// Keep only operations whose path matches this regex.
+        /// Keep only operations whose path contains this substring.
         #[arg(long)]
-        path_filter: Option<String>,
+        filter: Option<String>,
+        /// Keep only operations whose path starts with this prefix.
+        #[arg(long)]
+        prefix: Option<String>,
         /// Keep only operations tagged with this name.
         #[arg(long)]
         tag: Option<String>,

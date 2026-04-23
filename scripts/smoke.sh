@@ -23,7 +23,8 @@ run "operations --include tags,operationId"  operations tests/fixtures/petstore.
 run "operations --include all"               operations tests/fixtures/petstore.yaml --include all
 run "operations --exclude summary"           operations tests/fixtures/petstore.yaml --exclude summary
 run "operations --method GET"                operations tests/fixtures/petstore.yaml --method GET
-run "operations --path-filter petId"         operations tests/fixtures/petstore.yaml --path-filter petId
+run "operations --filter petId"              operations tests/fixtures/petstore.yaml --filter petId
+run "operations --prefix /pets/"             operations tests/fixtures/petstore.yaml --prefix /pets/
 run "operations --tag pets"                  operations tests/fixtures/petstore.yaml --tag pets
 run "operation listPets"        operation tests/fixtures/petstore.yaml listPets
 run "operation -m GET -p /pets" operation tests/fixtures/petstore.yaml -m GET -p /pets
