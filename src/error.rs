@@ -20,6 +20,17 @@ pub enum OadigError {
     #[error("schema not found: {0}")]
     SchemaNotFound(String),
 
+    #[error("operation not found: {method} {path}")]
+    OperationNotFound { method: String, path: String },
+
+    #[error(
+        "no operation with id {id:?}\nhint: run `oadig operations <file>` to list available operations"
+    )]
+    OperationIdNotFound { id: String },
+
+    #[error("multiple operations match id {id:?}:\n{matches}\nhint: use -m/-p to disambiguate")]
+    OperationIdAmbiguous { id: String, matches: String },
+
     #[error("{0}")]
     Other(String),
 }

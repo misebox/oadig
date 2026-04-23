@@ -114,10 +114,105 @@ fn operations_include_response_resolves_refs() {
 }
 
 #[test]
-fn endpoints_alias_resolves_to_operations() {
-    let from_alias = run_json(&["endpoints", PETSTORE_YAML]);
+fn ops_alias_resolves_to_operations() {
+    let from_alias = run_json(&["ops", PETSTORE_YAML]);
     let from_canonical = run_json(&["operations", PETSTORE_YAML]);
     assert_eq!(from_alias, from_canonical);
+}
+
+#[test]
+fn operation_lookup_by_id_shows_full_detail() {
+    let op = run_json(&["operation", PETSTORE_YAML, "listPets"]);
+    assert_eq!(op["method"], "GET");
+    assert_eq!(op["path"], "/pets");
+    assert_eq!(op["operationId"], "listPets");
+    let schema = &op["responses"]["200"]["content"]["application/json"]["schema"];
+    assert!(schema.get("$ref").is_none());
+    assert_eq!(schema["type"], "array");
+}
+
+#[test]
+fn operation_lookup_by_method_and_path_matches_id() {
+    let by_id = run_json(&["operation", PETSTORE_YAML, "listPets"]);
+    let by_mp = run_json(&["operation", PETSTORE_YAML, "-m", "GET", "-p", "/pets"]);
+    assert_eq!(by_id, by_mp);
+}
+
+#[test]
+fn op_alias_resolves_to_operation() {
+    let from_alias = run_json(&["op", PETSTORE_YAML, "listPets"]);
+    let from_canonical = run_json(&["operation", PETSTORE_YAML, "listPets"]);
+    assert_eq!(from_alias, from_canonical);
+}
+
+#[test]
+fn operation_method_is_case_insensitive() {
+    let upper = run_json(&["operation", PETSTORE_YAML, "-m", "GET", "-p", "/pets"]);
+    let lower = run_json(&["operation", PETSTORE_YAML, "-m", "get", "-p", "/pets"]);
+    assert_eq!(upper, lower);
+}
+
+#[test]
+fn operation_id_not_found_errors() {
+    let out = bin()
+        .args(["operation", PETSTORE_YAML, "nonexistent"])
+        .output()
+        .expect("spawn");
+    assert!(!out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("nonexistent"));
+    assert!(stderr.contains("hint"));
+}
+
+#[test]
+fn operation_method_path_not_found_errors() {
+    let out = bin()
+        .args(["operation", PETSTORE_YAML, "-m", "DELETE", "-p", "/pets"])
+        .output()
+        .expect("spawn");
+    assert!(!out.status.success());
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("DELETE"));
+    assert!(stderr.contains("/pets"));
+}
+
+#[test]
+fn operation_rejects_id_mixed_with_flags() {
+    let out = bin()
+        .args([
+            "operation",
+            PETSTORE_YAML,
+            "listPets",
+            "-m",
+            "GET",
+            "-p",
+            "/pets",
+        ])
+        .output()
+        .expect("spawn");
+    assert!(!out.status.success());
+}
+
+#[test]
+fn response_narrows_by_status() {
+    let all = run_json(&["response", PETSTORE_YAML, "listPets"]);
+    assert!(all.get("200").is_some());
+    let only_200 = run_json(&["response", PETSTORE_YAML, "listPets", "--status", "200"]);
+    assert_eq!(only_200, all["200"]);
+}
+
+#[test]
+fn res_alias_resolves_to_response() {
+    let from_alias = run_json(&["res", PETSTORE_YAML, "listPets"]);
+    let from_canonical = run_json(&["response", PETSTORE_YAML, "listPets"]);
+    assert_eq!(from_alias, from_canonical);
+}
+
+#[test]
+fn request_returns_null_when_missing() {
+    // petstore listPets has no requestBody
+    let req = run_json(&["request", PETSTORE_YAML, "listPets"]);
+    assert!(req.is_null());
 }
 
 #[test]

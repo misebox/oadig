@@ -1,5 +1,8 @@
 use clap::{Parser, Subcommand, ValueEnum};
 
+/// Short doc shown as the description for the positional `<FILE>`.
+const FILE_DOC: &str = "OpenAPI spec to read. `-` reads from stdin.";
+
 #[derive(Debug, Parser)]
 #[command(
     name = "oadig",
@@ -70,18 +73,28 @@ pub enum OperationField {
 pub enum Command {
     /// Show title, version, description, contact, license, servers.
     Info {
-        /// Path to an OpenAPI spec (`-` for stdin).
+        #[arg(help = FILE_DOC)]
         file: String,
     },
     /// Combined info + stats + paths.
-    Overview { file: String },
+    Overview {
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
     /// Show counts: paths, operations, schemas, tags, methods.
-    Stats { file: String },
+    Stats {
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
     /// List path strings (keys of the `paths` object).
-    Paths { file: String },
+    Paths {
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
     /// List operations (method + path, with configurable extras).
-    #[command(alias = "endpoints")]
+    #[command(alias = "ops")]
     Operations {
+        #[arg(help = FILE_DOC)]
         file: String,
         /// Extra fields to include in each entry. Default: summary.
         #[arg(long, value_enum, value_delimiter = ',')]
@@ -90,8 +103,60 @@ pub enum Command {
         #[arg(long, value_enum, value_delimiter = ',')]
         exclude: Vec<OperationField>,
     },
+    /// Show a single operation with every field, $refs resolved.
+    ///
+    /// Identify the operation by its operationId (positional) OR by
+    /// -m/--method and -p/--path. The two forms are mutually exclusive.
+    #[command(alias = "op")]
+    Operation {
+        #[arg(help = FILE_DOC)]
+        file: String,
+        /// operationId to look up.
+        id: Option<String>,
+        /// HTTP method (use with -p).
+        #[arg(short = 'm', long, conflicts_with = "id", requires = "path")]
+        method: Option<String>,
+        /// Path template (use with -m).
+        #[arg(short = 'p', long, conflicts_with = "id", requires = "method")]
+        path: Option<String>,
+    },
+    /// Show the requestBody of a single operation, $refs resolved.
+    #[command(alias = "req")]
+    Request {
+        #[arg(help = FILE_DOC)]
+        file: String,
+        /// operationId to look up.
+        id: Option<String>,
+        #[arg(short = 'm', long, conflicts_with = "id", requires = "path")]
+        method: Option<String>,
+        #[arg(short = 'p', long, conflicts_with = "id", requires = "method")]
+        path: Option<String>,
+    },
+    /// Show the responses of a single operation, $refs resolved.
+    #[command(alias = "res")]
+    Response {
+        #[arg(help = FILE_DOC)]
+        file: String,
+        /// operationId to look up.
+        id: Option<String>,
+        #[arg(short = 'm', long, conflicts_with = "id", requires = "path")]
+        method: Option<String>,
+        #[arg(short = 'p', long, conflicts_with = "id", requires = "method")]
+        path: Option<String>,
+        /// Narrow to a single status code (e.g. 200).
+        #[arg(long)]
+        status: Option<String>,
+    },
     /// List component schema names.
-    Schemas { file: String },
+    Schemas {
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
     /// Show a single component schema definition.
-    Schema { name: String, file: String },
+    Schema {
+        /// Schema name from components.schemas.
+        name: String,
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
 }

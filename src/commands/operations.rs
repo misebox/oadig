@@ -3,11 +3,99 @@ use std::collections::HashSet;
 use serde_json::{Map, Value};
 
 use crate::cli::OperationField;
+use crate::error::OadigError;
 use crate::resolver::{ResolveOptions, Resolver};
 
-const METHODS: &[&str] = &[
+pub const METHODS: &[&str] = &[
     "get", "put", "post", "delete", "options", "head", "patch", "trace",
 ];
+
+pub struct Located<'a> {
+    pub method: String,
+    pub path: String,
+    pub op: &'a Value,
+}
+
+/// Look up the operation object for a given method and path.
+pub fn find<'a>(spec: &'a Value, method: &str, path: &str) -> Result<&'a Value, OadigError> {
+    let lower = method.to_ascii_lowercase();
+    spec.get("paths")
+        .and_then(|p| p.get(path))
+        .and_then(|item| item.get(&lower))
+        .ok_or_else(|| OadigError::OperationNotFound {
+            method: method.to_uppercase(),
+            path: path.to_string(),
+        })
+}
+
+/// Look up the operation object by operationId. Must match exactly one op.
+pub fn find_by_id<'a>(spec: &'a Value, id: &str) -> Result<Located<'a>, OadigError> {
+    let mut matches: Vec<Located<'a>> = Vec::new();
+    if let Some(paths) = spec.get("paths").and_then(Value::as_object) {
+        for (path, item) in paths {
+            let Some(item_obj) = item.as_object() else {
+                continue;
+            };
+            for method in METHODS {
+                let Some(op) = item_obj.get(*method) else {
+                    continue;
+                };
+                if op.get("operationId").and_then(Value::as_str) == Some(id) {
+                    matches.push(Located {
+                        method: (*method).to_string(),
+                        path: path.clone(),
+                        op,
+                    });
+                }
+            }
+        }
+    }
+    match matches.len() {
+        0 => Err(OadigError::OperationIdNotFound { id: id.to_string() }),
+        1 => Ok(matches.into_iter().next().unwrap()),
+        _ => {
+            let list = matches
+                .iter()
+                .map(|m| format!("  - {:<6} {}", m.method.to_uppercase(), m.path))
+                .collect::<Vec<_>>()
+                .join("\n");
+            Err(OadigError::OperationIdAmbiguous {
+                id: id.to_string(),
+                matches: list,
+            })
+        }
+    }
+}
+
+/// Resolve an operation lookup that may use either `id` or `(method, path)`.
+pub fn resolve_lookup<'a>(
+    spec: &'a Value,
+    id: Option<&str>,
+    method: Option<&str>,
+    path: Option<&str>,
+) -> Result<Located<'a>, OadigError> {
+    match (id, method, path) {
+        (Some(id), _, _) => find_by_id(spec, id),
+        (None, Some(m), Some(p)) => {
+            let op = find(spec, m, p)?;
+            Ok(Located {
+                method: m.to_ascii_lowercase(),
+                path: p.to_string(),
+                op,
+            })
+        }
+        _ => Err(OadigError::Other(
+            "specify either <id> or both -m/--method and -p/--path".to_string(),
+        )),
+    }
+}
+
+pub fn resolve_in_place(value: Value, spec: &Value, opts: ResolveOptions, origin: &str) -> Value {
+    if !opts.resolve {
+        return value;
+    }
+    Resolver::new(spec, opts).resolve(value, origin)
+}
 
 // Every concrete field (i.e. excluding the `All` meta-variant).
 const ALL_FIELDS: &[OperationField] = &[
@@ -119,7 +207,7 @@ fn project_field(
     }
     let value = match field {
         OperationField::Parameters | OperationField::Request | OperationField::Response => {
-            resolve_refs(
+            resolve_in_place(
                 raw.clone(),
                 spec,
                 resolve_opts,
@@ -129,11 +217,4 @@ fn project_field(
         _ => raw.clone(),
     };
     Some((output_key, value))
-}
-
-fn resolve_refs(value: Value, spec: &Value, opts: ResolveOptions, origin: &str) -> Value {
-    if !opts.resolve {
-        return value;
-    }
-    Resolver::new(spec, opts).resolve(value, origin)
 }
