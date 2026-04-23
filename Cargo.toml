@@ -5,6 +5,10 @@ edition = "2024"
 description = "Extract specific information from bloated OpenAPI specs"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/misebox/oadig"
+homepage = "https://github.com/misebox/oadig"
+readme = "README.md"
+keywords = ["openapi", "swagger", "cli", "api", "yaml"]
+categories = ["command-line-utilities", "parser-implementations"]
 
 [dependencies]
 anyhow = "1"
