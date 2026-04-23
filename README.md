@@ -26,7 +26,7 @@ Homebrew tap: coming soon.
 
 ```sh
 oadig overview openapi.yaml
-oadig operations openapi.yaml --filter 'tag=Customers' -l
+oadig operations --filter 'tag=Customers' -l openapi.yaml
 oadig op getUser openapi.yaml
 oadig search webhook openapi.yaml
 ```
@@ -35,8 +35,8 @@ oadig search webhook openapi.yaml
 
 ```sh
 curl -s https://example.com/openapi.json | oadig paths -
-oadig operations openapi.yaml -c | jq '.[] | select(.deprecated == true)'
-oadig operations stripe-api.json --filter 'method=POST' --filter 'path=/v1/charges*' -l
+oadig operations -c openapi.yaml | jq '.[] | select(.deprecated == true)'
+oadig operations --filter 'method=POST' --filter 'path=/v1/charges*' -l stripe-api.json
 ```
 
 For trying it against real large specs (GitHub REST, Stripe, Amazon SP-API), see `tmp/realspecs/README.md`.
@@ -56,8 +56,8 @@ Supported by `paths` and `operations`. Multiple `--filter` flags compose AND.
 | `deprecated` | `true` / `false` | `operations` only |
 
 ```sh
-oadig operations openapi.yaml --filter 'method=GET' --filter 'path=/v1/*'
-oadig paths openapi.yaml --filter 'path=*admin*'
+oadig operations --filter 'method=GET' --filter 'path=/v1/*' openapi.yaml
+oadig paths --filter 'path=*admin*' openapi.yaml
 ```
 
 Regex is intentionally not supported here — use `search` for that.

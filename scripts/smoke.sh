@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# Smoke test: run each Phase 1 subcommand against fixtures and print output.
+# Smoke test: run each subcommand against fixtures and print output.
 # Usage: scripts/smoke.sh
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+
+F=tests/fixtures/petstore.yaml
+FJ=tests/fixtures/petstore.json
+FC=tests/fixtures/circular.yaml
 
 run() {
   local label="$1"
@@ -13,35 +17,35 @@ run() {
   echo
 }
 
-run "info (yaml)"               info tests/fixtures/petstore.yaml
-run "spec"                      spec tests/fixtures/petstore.yaml
-run "overview (yaml)"           overview tests/fixtures/petstore.yaml
-run "stats (yaml)"              stats tests/fixtures/petstore.yaml
-run "paths (json)"              paths tests/fixtures/petstore.json
-run "operations (yaml)"         operations tests/fixtures/petstore.yaml
-run "operations --lines"        operations tests/fixtures/petstore.yaml --lines
-run "operations --include tags,operationId"  operations tests/fixtures/petstore.yaml --include tags,operationId
-run "operations --include all"               operations tests/fixtures/petstore.yaml --include all
-run "operations --exclude summary"           operations tests/fixtures/petstore.yaml --exclude summary
-run "operations --filter method=GET"         operations tests/fixtures/petstore.yaml --filter 'method=GET'
-run "operations --filter 'path=*petId*'"     operations tests/fixtures/petstore.yaml --filter 'path=*petId*'
-run "operations --filter path=/pets/*"       operations tests/fixtures/petstore.yaml --filter 'path=/pets/*'
-run "operations --filter tag=pets"           operations tests/fixtures/petstore.yaml --filter 'tag=pets'
-run "operation listPets"        operation listPets tests/fixtures/petstore.yaml
-run "operation -m GET -p /pets" operation -m GET -p /pets tests/fixtures/petstore.yaml
-run "request createPet"         request createPet tests/fixtures/petstore.yaml
-run "response listPets --status 200"  response listPets tests/fixtures/petstore.yaml --status 200
-run "requests"                  requests tests/fixtures/petstore.yaml
-run "responses"                 responses tests/fixtures/petstore.yaml
-run "statuses"                  statuses tests/fixtures/petstore.yaml
-run "responses --status 200"    responses tests/fixtures/petstore.yaml --status 200
-run "search Pet --lines"        search Pet tests/fixtures/petstore.yaml --lines
-run "tags"                      tags tests/fixtures/petstore.yaml
-run "components"                components tests/fixtures/petstore.yaml
-run "schemas (yaml)"            schemas tests/fixtures/petstore.yaml
-run "schema Pets resolved"      schema Pets tests/fixtures/petstore.yaml
-run "schema Pets no-resolve"    schema Pets tests/fixtures/petstore.yaml --no-resolve-refs
-run "schema Node circular"      schema Node tests/fixtures/circular.yaml
+run "info"                                    info "$F"
+run "spec"                                    spec "$F"
+run "overview"                                overview "$F"
+run "stats"                                   stats "$F"
+run "paths (json)"                            paths "$FJ"
+run "operations"                              operations "$F"
+run "operations --lines"                      operations --lines "$F"
+run "operations --include tags,operationId"   operations --include tags,operationId "$F"
+run "operations --include all"                operations --include all "$F"
+run "operations --exclude summary"            operations --exclude summary "$F"
+run "operations --filter method=GET"          operations --filter 'method=GET' "$F"
+run "operations --filter path=*petId*"        operations --filter 'path=*petId*' "$F"
+run "operations --filter path=/pets/*"        operations --filter 'path=/pets/*' "$F"
+run "operations --filter tag=pets"            operations --filter 'tag=pets' "$F"
+run "operation listPets"                      operation listPets "$F"
+run "operation -m GET -p /pets"               operation -m GET -p /pets "$F"
+run "request createPet"                       request createPet "$F"
+run "response listPets --status 200"          response --status 200 listPets "$F"
+run "requests"                                requests "$F"
+run "responses"                               responses "$F"
+run "statuses"                                statuses "$F"
+run "responses --status 200"                  responses --status 200 "$F"
+run "search Pet --lines"                      search --lines Pet "$F"
+run "tags"                                    tags "$F"
+run "components"                              components "$F"
+run "schemas"                                 schemas "$F"
+run "schema Pets"                             schema Pets "$F"
+run "schema Pets --no-resolve-refs"           schema --no-resolve-refs Pets "$F"
+run "schema Node (circular)"                  schema Node "$FC"
 
 echo "=== info via stdin ==="
-cat tests/fixtures/petstore.json | cargo run --quiet -- info -
+cat "$FJ" | cargo run --quiet -- info -
