@@ -103,6 +103,15 @@ pub enum Command {
     Operations {
         #[arg(help = FILE_DOC)]
         file: String,
+        /// Keep only operations with these HTTP methods (comma-separated).
+        #[arg(short = 'm', long, value_delimiter = ',')]
+        method: Vec<String>,
+        /// Keep only operations whose path matches this regex.
+        #[arg(long)]
+        path_filter: Option<String>,
+        /// Keep only operations tagged with this name.
+        #[arg(long)]
+        tag: Option<String>,
         /// Extra fields per entry.
         ///
         /// Default: summary.
@@ -115,15 +124,6 @@ pub enum Command {
         /// Same values as --include.
         #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
         exclude: Vec<OperationField>,
-        /// Keep only operations with these HTTP methods (comma-separated).
-        #[arg(short = 'm', long, value_delimiter = ',')]
-        method: Vec<String>,
-        /// Keep only operations whose path matches this regex.
-        #[arg(long)]
-        path_filter: Option<String>,
-        /// Keep only operations tagged with this name.
-        #[arg(long)]
-        tag: Option<String>,
     },
     /// Show a single operation with every field, $refs resolved.
     ///
