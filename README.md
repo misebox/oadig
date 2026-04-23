@@ -43,17 +43,62 @@ For trying it against real large specs (GitHub REST, Stripe, Amazon SP-API), see
 
 ---
 
+## Usage
+
+```
+Extract specific info from OpenAPI specs
+
+Usage: oadig [OPTIONS] <COMMAND>
+
+Commands:
+  spec        Emit the spec version string (openapi 3.x or swagger 2.0)
+  info        Show title, version, description, contact, license, servers
+  stats       Show counts: paths, operations, schemas, tags, methods
+  overview    Combined info + stats + operations
+  operation   Show a single operation with every field, $refs resolved.
+  request     Show the requestBody of a single operation, $refs resolved.
+  response    Show the responses of a single operation, $refs resolved.
+  schema      Show a single component schema definition
+  paths       List path strings (keys of the `paths` object)
+  operations  List operations (method + path, with configurable extras)
+  requests    List requestBodies of operations that have one
+  responses   List responses of every operation. Optionally narrow to one status
+  statuses    List unique status codes used across the spec with a description
+  tags        List declared and referenced tags with operation counts
+  components  Show component sections and the names defined in each
+  schemas     List component schema names
+  search      Search string values in the spec for a keyword
+  help        Print this message or the help of the given subcommand(s)
+
+Options:
+      --format <FORMAT>        [default: json] [possible values: json, yaml]
+  -c, --compact                Compact JSON output (no-op for YAML). JSON is pretty by default
+  -l, --lines                  JSON: top-level array on multiple lines, each element on one line. Falls back to pretty for non-array values. No-op for YAML
+      --resolve-refs           Resolve $ref inline (default). Use --no-resolve-refs to disable
+      --no-resolve-refs
+      --max-depth <MAX_DEPTH>
+      --show-null              Emit `null` for expected-but-absent fields instead of omitting the key
+  -h, --help                   Print help
+  -V, --version                Print version
+```
+
+Each subcommand has its own `--help` with arg details.
+
+---
+
 ## `--filter` DSL
 
-Supported by `paths` and `operations`. Multiple `--filter` flags compose AND.
+Supported by `paths` and `operations`. Repeat `--filter` to narrow the result further.
 
-| Key | Values | Notes |
+| Key | Accepted values | Example |
 |---|---|---|
-| `method` | `GET`, `POST,PUT` (comma = OR) | `operations` only |
-| `path` | `*foo*` / `foo*` / `*foo` / `foo` | glob, **quote the value** to protect from the shell |
-| `tag` | `pets`, `users,admin` (comma = OR) | `operations` only |
-| `operationId`, `summary`, `description` | glob | `operations` only |
-| `deprecated` | `true` / `false` | `operations` only |
+| `method` | HTTP method | `method=GET,POST,PUT` |
+| `path` | Glob: `foo` exact, `foo*` prefix, `*foo` suffix, `*foo*` contains. Quote the value. | `path=/v1/*` |
+| `tag` | Tag name | `tag=users,admin` |
+| `operationId`, `summary`, `description` | Same glob as `path` | `summary=*deprecated*` |
+| `deprecated` | `true` or `false` | `deprecated=true` |
+
+`paths` only accepts the `path` key; `operations` accepts all keys.
 
 ```sh
 oadig operations --filter 'method=GET' --filter 'path=/v1/*' openapi.yaml
