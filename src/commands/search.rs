@@ -236,7 +236,8 @@ fn escape_jsonpath_key(k: &str) -> String {
 }
 
 // Decide whether the hit is inside an operation. Expected token prefix:
-// [Key("paths"), Key(<path>), Key(<method>), ...].
+// [Key("paths"), Key(<path>), Key(<method>), ...]. Returns the operation
+// reference and the JSONPath-style suffix after `<method>`.
 fn operation_context(tokens: &[Token]) -> Option<(Value, Value)> {
     if tokens.len() < 3 {
         return None;
@@ -260,13 +261,27 @@ fn operation_context(tokens: &[Token]) -> Option<(Value, Value)> {
         "method": method.to_uppercase(),
         "path": op_path.clone(),
     });
-    let at: Vec<Value> = tokens
-        .iter()
-        .skip(3)
-        .map(|t| match t {
-            Token::Key(k) => Value::String(k.clone()),
-            Token::Index(i) => Value::from(*i),
-        })
-        .collect();
-    Some((op_ref, Value::Array(at)))
+    let at = to_at_expr(&tokens[3..]);
+    Some((op_ref, Value::String(at)))
+}
+
+// JSONPath-style relative expression (no leading `$`). Used for the tail
+// portion after an operation prefix.
+fn to_at_expr(tokens: &[Token]) -> String {
+    let mut s = String::new();
+    for t in tokens {
+        match t {
+            Token::Index(i) => s.push_str(&format!("[{}]", i)),
+            Token::Key(k) if is_plain_ident(k) => {
+                if !s.is_empty() {
+                    s.push('.');
+                }
+                s.push_str(k);
+            }
+            Token::Key(k) => {
+                s.push_str(&format!("[\"{}\"]", escape_jsonpath_key(k)));
+            }
+        }
+    }
+    s
 }

@@ -503,22 +503,35 @@ fn search_default_includes_operation_context() {
     let h = &arr[0];
     assert_eq!(h["operationRef"]["method"], "GET");
     assert_eq!(h["operationRef"]["path"], "/pets");
-    assert_eq!(h["at"], json!(["summary"]));
+    assert_eq!(h["at"], "summary");
     assert_eq!(h["value"], "List all pets");
     // path is opt-in, not in default set
     assert!(h.get("path").is_none());
 }
 
 #[test]
-fn search_include_path_adds_token_array() {
-    let hits = run_json(&["search", "Petstore", PETSTORE_YAML, "--include", "path"]);
+fn search_include_jsonpath_renders_dotted_with_bracket_quoting() {
+    let hits = run_json(&["search", "Petstore", PETSTORE_YAML, "--include", "jsonPath"]);
     let info_hit = hits
         .as_array()
         .unwrap()
         .iter()
         .find(|h| h["pointer"] == "/info/title")
         .unwrap();
-    assert_eq!(info_hit["path"], json!(["info", "title"]));
+    assert_eq!(info_hit["jsonPath"], "$.info.title");
+}
+
+#[test]
+fn search_jsonpath_quotes_complex_keys() {
+    let hits = run_json(&[
+        "search",
+        "Info for a specific pet",
+        PETSTORE_YAML,
+        "--include",
+        "jsonPath",
+    ]);
+    let h = &hits.as_array().unwrap()[0];
+    assert_eq!(h["jsonPath"], "$.paths[\"/pets/{petId}\"].get.summary");
 }
 
 #[test]
