@@ -147,7 +147,8 @@ fn resolve_fields(
     include: &[OperationField],
     exclude: &[OperationField],
 ) -> HashSet<OperationField> {
-    let mut fields: HashSet<OperationField> = [OperationField::Summary].into();
+    let mut fields: HashSet<OperationField> =
+        [OperationField::OperationId, OperationField::Summary].into();
     for f in include {
         if *f == OperationField::All {
             fields.extend(ALL_FIELDS.iter().copied());

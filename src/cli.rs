@@ -200,7 +200,7 @@ pub enum Command {
         filters: Vec<String>,
         /// Extra fields per entry.
         ///
-        /// Default: summary.
+        /// Default: operationId, summary.
         ///
         /// Values: summary, description, tags, parameters, request, response, security, deprecated, operationId, all.
         #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]

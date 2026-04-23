@@ -219,12 +219,12 @@ fn operations_filter_rejects_unknown_key() {
 }
 
 #[test]
-fn operations_lists_method_path_summary() {
+fn operations_default_has_method_path_operation_id_summary() {
     let ops = run_json(&["operations", PETSTORE_YAML]);
     let expected = json!([
-        { "method": "GET",  "path": "/pets",         "summary": "List all pets" },
-        { "method": "POST", "path": "/pets",         "summary": "Create a pet" },
-        { "method": "GET",  "path": "/pets/{petId}", "summary": "Info for a specific pet" },
+        { "method": "GET",  "path": "/pets",         "operationId": "listPets",    "summary": "List all pets" },
+        { "method": "POST", "path": "/pets",         "operationId": "createPet",   "summary": "Create a pet" },
+        { "method": "GET",  "path": "/pets/{petId}", "operationId": "showPetById", "summary": "Info for a specific pet" },
     ]);
     assert_eq!(ops, expected);
 }
