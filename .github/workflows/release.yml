@@ -61,3 +61,18 @@ jobs:
         run: gh release edit "${{ needs.create-release.outputs.tag }}" --draft=false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  bump-homebrew:
+    needs: publish
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.ref_name, '-') }}
+    steps:
+      - name: Trigger tap bump
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh workflow run bump.yml \
+            -R misebox/homebrew-tap \
+            -f tool=oadig \
+            -f version="${TAG#v}"
