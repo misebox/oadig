@@ -28,7 +28,7 @@ run "operations --filter 'path=*petId*'"     operations tests/fixtures/petstore.
 run "operations --filter path=/pets/*"       operations tests/fixtures/petstore.yaml --filter 'path=/pets/*'
 run "operations --filter tag=pets"           operations tests/fixtures/petstore.yaml --filter 'tag=pets'
 run "operation listPets"        operation listPets tests/fixtures/petstore.yaml
-run "operation -m GET -p /pets" operation tests/fixtures/petstore.yaml -m GET -p /pets
+run "operation -m GET -p /pets" operation -m GET -p /pets tests/fixtures/petstore.yaml
 run "request createPet"         request createPet tests/fixtures/petstore.yaml
 run "response listPets --status 200"  response listPets tests/fixtures/petstore.yaml --status 200
 run "requests"                  requests tests/fixtures/petstore.yaml
