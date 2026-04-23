@@ -61,7 +61,7 @@ pub enum Format {
 #[value(rename_all = "camelCase")]
 pub enum SearchField {
     Pointer,
-    Path,
+    JsonPath,
     OperationRef,
     At,
     Value,
@@ -271,7 +271,7 @@ pub enum Command {
         ///
         /// Default: pointer, operationRef, at, value.
         ///
-        /// Values: pointer, path, operationRef, at, value, all.
+        /// Values: pointer, jsonPath, operationRef, at, value, all.
         #[arg(long, value_enum, value_delimiter = ',', hide_possible_values = true)]
         include: Vec<SearchField>,
         /// Fields to drop per hit.

@@ -9,7 +9,7 @@ use crate::error::OadigError;
 
 const ALL_FIELDS: &[SearchField] = &[
     SearchField::Pointer,
-    SearchField::Path,
+    SearchField::JsonPath,
     SearchField::OperationRef,
     SearchField::At,
     SearchField::Value,
@@ -21,6 +21,14 @@ const DEFAULT_FIELDS: &[SearchField] = &[
     SearchField::At,
     SearchField::Value,
 ];
+
+// Typed token: array index vs object key. Kept typed because JSONPath
+// renders `[0]` for indexes but `.name` / `["complex"]` for keys.
+#[derive(Debug, Clone)]
+enum Token {
+    Key(String),
+    Index(usize),
+}
 
 enum Pattern {
     Substring {
@@ -78,7 +86,7 @@ pub fn run(
 ) -> Result<Value, OadigError> {
     let pattern = Pattern::build(keyword, regex, case_sensitive)?;
     let fields = resolve_fields(include, exclude);
-    let mut tokens: Vec<String> = Vec::new();
+    let mut tokens: Vec<Token> = Vec::new();
     let mut hits = Vec::new();
     walk(spec, &mut tokens, &pattern, &fields, &mut hits);
     Ok(Value::Array(hits))
@@ -105,7 +113,7 @@ fn resolve_fields(include: &[SearchField], exclude: &[SearchField]) -> HashSet<S
 
 fn walk(
     value: &Value,
-    tokens: &mut Vec<String>,
+    tokens: &mut Vec<Token>,
     pattern: &Pattern,
     fields: &HashSet<SearchField>,
     hits: &mut Vec<Value>,
@@ -116,14 +124,14 @@ fn walk(
         }
         Value::Object(obj) => {
             for (k, v) in obj {
-                tokens.push(k.clone());
+                tokens.push(Token::Key(k.clone()));
                 walk(v, tokens, pattern, fields, hits);
                 tokens.pop();
             }
         }
         Value::Array(arr) => {
             for (i, v) in arr.iter().enumerate() {
-                tokens.push(i.to_string());
+                tokens.push(Token::Index(i));
                 walk(v, tokens, pattern, fields, hits);
                 tokens.pop();
             }
@@ -132,18 +140,15 @@ fn walk(
     }
 }
 
-fn build_hit(tokens: &[String], value: &str, fields: &HashSet<SearchField>) -> Value {
+fn build_hit(tokens: &[Token], value: &str, fields: &HashSet<SearchField>) -> Value {
     let mut out = Map::new();
-
-    // operationRef + at are derived from the prefix `paths/<path>/<method>/...`.
     let op_context = operation_context(tokens);
 
     if fields.contains(&SearchField::Pointer) {
         out.insert("pointer".into(), Value::String(to_pointer(tokens)));
     }
-    if fields.contains(&SearchField::Path) {
-        let path: Vec<Value> = tokens.iter().cloned().map(Value::String).collect();
-        out.insert("path".into(), Value::Array(path));
+    if fields.contains(&SearchField::JsonPath) {
+        out.insert("jsonPath".into(), Value::String(to_jsonpath(tokens)));
     }
     if fields.contains(&SearchField::OperationRef)
         && let Some((ref op_ref, _)) = op_context
@@ -161,36 +166,107 @@ fn build_hit(tokens: &[String], value: &str, fields: &HashSet<SearchField>) -> V
     Value::Object(out)
 }
 
-// Build the RFC 6901 JSON Pointer from raw tokens. Escape `~` → `~0`, `/` → `~1`.
-fn to_pointer(tokens: &[String]) -> String {
+// RFC 6901 JSON Pointer. Keys escape `~` → `~0`, `/` → `~1`; indexes
+// render as their decimal string.
+fn to_pointer(tokens: &[Token]) -> String {
     let mut s = String::new();
     for t in tokens {
         s.push('/');
-        for ch in t.chars() {
-            match ch {
-                '~' => s.push_str("~0"),
-                '/' => s.push_str("~1"),
-                c => s.push(c),
+        match t {
+            Token::Key(k) => {
+                for ch in k.chars() {
+                    match ch {
+                        '~' => s.push_str("~0"),
+                        '/' => s.push_str("~1"),
+                        c => s.push(c),
+                    }
+                }
+            }
+            Token::Index(i) => {
+                s.push_str(&i.to_string());
             }
         }
     }
     s
 }
 
-// Inspect the token prefix to decide whether the hit is inside an operation.
-// Expected shape: tokens = ["paths", "<path>", "<method>", ...rest].
-fn operation_context(tokens: &[String]) -> Option<(Value, Value)> {
-    if tokens.len() < 3 || tokens[0] != "paths" {
+// Best-effort RFC 9535 JSONPath expression. Plain identifier keys use
+// dot notation; everything else falls back to quoted bracket notation
+// so the expression survives spec paths like `/pets/{id}`.
+fn to_jsonpath(tokens: &[Token]) -> String {
+    let mut s = String::from("$");
+    for t in tokens {
+        match t {
+            Token::Index(i) => {
+                s.push_str(&format!("[{}]", i));
+            }
+            Token::Key(k) if is_plain_ident(k) => {
+                s.push('.');
+                s.push_str(k);
+            }
+            Token::Key(k) => {
+                s.push_str(&format!("[\"{}\"]", escape_jsonpath_key(k)));
+            }
+        }
+    }
+    s
+}
+
+fn is_plain_ident(s: &str) -> bool {
+    let mut chars = s.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    if !(first.is_ascii_alphabetic() || first == '_') {
+        return false;
+    }
+    chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
+fn escape_jsonpath_key(k: &str) -> String {
+    let mut out = String::with_capacity(k.len());
+    for ch in k.chars() {
+        match ch {
+            '\\' => out.push_str("\\\\"),
+            '"' => out.push_str("\\\""),
+            c => out.push(c),
+        }
+    }
+    out
+}
+
+// Decide whether the hit is inside an operation. Expected token prefix:
+// [Key("paths"), Key(<path>), Key(<method>), ...].
+fn operation_context(tokens: &[Token]) -> Option<(Value, Value)> {
+    if tokens.len() < 3 {
         return None;
     }
-    let method = tokens[2].as_str();
-    if !METHODS.contains(&method) {
+    let Token::Key(head) = &tokens[0] else {
+        return None;
+    };
+    if head != "paths" {
+        return None;
+    }
+    let Token::Key(op_path) = &tokens[1] else {
+        return None;
+    };
+    let Token::Key(method) = &tokens[2] else {
+        return None;
+    };
+    if !METHODS.contains(&method.as_str()) {
         return None;
     }
     let op_ref = json!({
         "method": method.to_uppercase(),
-        "path": tokens[1].clone(),
+        "path": op_path.clone(),
     });
-    let at: Vec<Value> = tokens.iter().skip(3).cloned().map(Value::String).collect();
+    let at: Vec<Value> = tokens
+        .iter()
+        .skip(3)
+        .map(|t| match t {
+            Token::Key(k) => Value::String(k.clone()),
+            Token::Index(i) => Value::from(*i),
+        })
+        .collect();
     Some((op_ref, Value::Array(at)))
 }
