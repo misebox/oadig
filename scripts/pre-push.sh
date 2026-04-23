@@ -20,6 +20,7 @@ exclude_paths=(
 )
 
 fail=0
+workflows_changed=0
 
 while read -r local_ref local_oid remote_ref remote_oid; do
   # Deleting a remote branch: nothing to scan.
@@ -56,7 +57,27 @@ while read -r local_ref local_oid remote_ref remote_oid; do
     echo "$hits" | sed 's/^/  /' >&2
     fail=1
   fi
+
+  # Flag if any GitHub workflow file changed — linted once after the loop.
+  if git diff --name-only "$range" -- \
+       '.github/workflows/*.yml' '.github/workflows/*.yaml' 2>/dev/null \
+     | grep -q .; then
+    workflows_changed=1
+  fi
 done
+
+if [ "$workflows_changed" -eq 1 ]; then
+  if command -v actionlint >/dev/null 2>&1; then
+    echo "pre-push: running actionlint on .github/workflows/..."
+    if ! actionlint; then
+      echo "pre-push: blocked — actionlint found issues" >&2
+      fail=1
+    fi
+  else
+    echo "pre-push: warning — actionlint not installed; skipping workflow lint" >&2
+    echo "pre-push: install with 'brew install actionlint' (macOS) or see https://github.com/rhysd/actionlint" >&2
+  fi
+fi
 
 if [ "$fail" -ne 0 ]; then
   echo >&2
