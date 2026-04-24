@@ -30,6 +30,12 @@ semantic versioning (pre-1.0: each phase bumps minor).
   `"*/*"` fallback — auto-convert normalizes bare `response.schema`
   into `content: { application/json: { schema } }` upstream.
 
+### Fixed
+
+- `schemas` / `schema` / `components` on Swagger 2.0 specs now return
+  the definitions (previously empty because the 2.0 `definitions` block
+  was not surfaced under `components.schemas`).
+
 ## [0.2.0] — 2026-04-24
 
 ### Added
