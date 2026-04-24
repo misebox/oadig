@@ -1,4 +1,5 @@
 pub mod components;
+pub mod convert;
 pub mod filter;
 pub mod info;
 pub mod operation;
@@ -135,6 +136,7 @@ pub fn dispatch(
         )?,
         Command::Tags { file } => tags::run(&loader::load(file)?.value),
         Command::Validate { file } => validate::run(&loader::load(file)?.value)?,
+        Command::Convert { target, file } => convert::run(&loader::load(file)?.value, target)?,
         Command::Components { file } => components::run(&loader::load(file)?.value, show_null),
         Command::Schemas { file } => schemas::run(&loader::load(file)?.value),
         Command::Schema { name, file } => schema::run(&loader::load(file)?.value, name, opts)?,

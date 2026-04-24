@@ -571,6 +571,62 @@ fn search_regex_mode() {
 }
 
 #[test]
+fn convert_swagger2_to_openapi30_round_trips_through_validate() {
+    let bin_path = env!("CARGO_BIN_EXE_oadig");
+    let converted = Command::new(bin_path)
+        .args(["convert", "3.0", SWAGGER2_YAML])
+        .output()
+        .expect("spawn convert");
+    assert!(converted.status.success());
+
+    let value: Value = serde_json::from_slice(&converted.stdout).unwrap();
+    assert_eq!(value["openapi"], "3.0.3");
+    assert_eq!(value["servers"][0]["url"], "https://api.example.com/v1");
+    assert!(
+        value["paths"]["/ping"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+            .is_object()
+    );
+
+    // Pipe through validate; expect valid.
+    let validator = Command::new(bin_path)
+        .args(["validate", "-"])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn validate");
+    use std::io::Write;
+    validator
+        .stdin
+        .as_ref()
+        .unwrap()
+        .write_all(&converted.stdout)
+        .unwrap();
+    let result = validator.wait_with_output().unwrap();
+    assert!(result.status.success());
+    let verdict: Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(verdict["valid"], true);
+}
+
+#[test]
+fn convert_rewrites_refs() {
+    let value = run_json(&["convert", "3.0", "tests/fixtures/swagger2-with-ref.yaml"]);
+    let schema_ref = &value["paths"]["/a"]["get"]["responses"]["200"]["content"]["application/json"]
+        ["schema"]["$ref"];
+    assert_eq!(schema_ref, "#/components/schemas/Thing");
+    assert!(value["components"]["schemas"]["Thing"].is_object());
+}
+
+#[test]
+fn convert_rejects_unsupported_direction() {
+    let out = bin()
+        .args(["convert", "2.0", PETSTORE_YAML])
+        .output()
+        .expect("spawn");
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("not implemented"));
+}
+
+#[test]
 fn validate_accepts_valid_openapi() {
     let v = run_json(&["validate", PETSTORE_YAML]);
     assert_eq!(v["valid"], true);

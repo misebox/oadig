@@ -1,0 +1,18 @@
+swagger: "2.0"
+info:
+  title: RefTest
+  version: "1.0"
+paths:
+  /a:
+    get:
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: "#/definitions/Thing"
+definitions:
+  Thing:
+    type: object
+    properties:
+      id:
+        type: integer

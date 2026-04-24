@@ -272,6 +272,13 @@ pub enum Command {
         #[arg(help = FILE_DOC)]
         file: String,
     },
+    /// Convert a spec to a target version. Currently supports Swagger 2.0 → 3.0.
+    Convert {
+        /// Target version (currently only `3.0` is supported).
+        target: String,
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
     /// Search string values in the spec for a keyword.
     Search {
         /// Keyword or regex to match.
