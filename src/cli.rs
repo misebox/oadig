@@ -272,9 +272,9 @@ pub enum Command {
         #[arg(help = FILE_DOC)]
         file: String,
     },
-    /// Convert a spec to a target version. Currently supports Swagger 2.0 → 3.0.
+    /// Convert a spec to a target version. Supports Swagger 2.0 → 3.0 / 3.1 and OpenAPI 3.0 → 3.1.
     Convert {
-        /// Target version (currently only `3.0` is supported).
+        /// Target version: `3.0` or `3.1`.
         target: String,
         #[arg(help = FILE_DOC)]
         file: String,

@@ -82,6 +82,8 @@ Commands:
   tags        List declared and referenced tags with operation counts
   components  Show component sections and the names defined in each
   schemas     List component schema names
+  validate    Validate a spec against the OpenAPI 3.x schema
+  convert     Convert a spec to a target version. Supports Swagger 2.0 → 3.0 / 3.1 and OpenAPI 3.0 → 3.1
   search      Search string values in the spec for a keyword
   help        Print this message or the help of the given subcommand(s)
 
@@ -136,12 +138,13 @@ Regex is not supported here — use `search` for that.
 
 ## Swagger 2.0 Support
 
-Partial:
+Swagger 2.0 specs are auto-converted to OpenAPI 3.0 internally so every data command behaves the same. Commands that depend on the source shape keep seeing the raw spec:
 
-- `spec`, `info`, `paths`, `operations`, `tags`, `stats` work on Swagger 2.0 specs.
-- `statuses --include schema` folds Swagger 2.0's bare `response.schema` under the `"*/*"` key.
-- `content` (media type map) is OpenAPI 3.x only.
-- Full `requestBody` interop (Swagger 2.0 uses `parameters: [{ in: body }]`) is not implemented.
+- `spec`, `search`, `validate`, `convert` operate on the original document.
+- `overview` reports the original version while running stats and operations on the converted form.
+- All other commands see the converted OpenAPI 3.0 shape.
+
+Use `oadig convert 3.0 swagger2.yaml` to emit the converted document explicitly.
 
 ---
 
