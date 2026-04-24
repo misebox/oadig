@@ -16,7 +16,11 @@ cargo install oadig
 
 Pre-built binaries for macOS arm64, Linux x86_64, and Windows x86_64 are on [GitHub Releases](https://github.com/misebox/oadig/releases).
 
-Homebrew tap: coming soon.
+Homebrew:
+
+```sh
+brew install misebox/tap/oadig
+```
 
 ---
 
