@@ -378,11 +378,35 @@ fn statuses_dedupes_by_code() {
 }
 
 #[test]
-fn statuses_include_schema_for_swagger2_uses_star_mediatype() {
+fn schemas_lists_definitions_from_swagger2() {
+    // swagger2-with-ref.yaml defines `Thing` under top-level `definitions`.
+    // Auto-convert should surface it via components.schemas.
+    let v = run_json(&["schemas", "tests/fixtures/swagger2-with-ref.yaml"]);
+    assert_eq!(v, json!(["Thing"]));
+}
+
+#[test]
+fn schema_resolves_swagger2_definition_by_name() {
+    let v = run_json(&["schema", "Thing", "tests/fixtures/swagger2-with-ref.yaml"]);
+    assert_eq!(v["type"], "object");
+}
+
+#[test]
+fn operations_on_swagger2_lists_by_converted_shape() {
+    let v = run_json(&["operations", SWAGGER2_YAML]);
+    let arr = v.as_array().unwrap();
+    assert_eq!(arr.len(), 1);
+    assert_eq!(arr[0]["method"], "GET");
+    assert_eq!(arr[0]["path"], "/ping");
+    assert_eq!(arr[0]["operationId"], "ping");
+}
+
+#[test]
+fn statuses_include_schema_for_swagger2_uses_application_json_after_convert() {
     let v = run_json(&["statuses", SWAGGER2_YAML, "--include", "schema"]);
     let arr = v.as_array().unwrap();
     let first = arr.iter().find(|e| e["status"] == "200").unwrap();
-    let schema = &first["schema"]["*/*"];
+    let schema = &first["schema"]["application/json"];
     assert_eq!(schema["type"], "object");
     assert_eq!(schema["properties"]["ok"]["type"], "boolean");
 }

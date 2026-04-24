@@ -51,19 +51,70 @@ fn split_positionals<'a>(
     }
 }
 
+// Load the spec file as-is. Used by commands that must see the original
+// structure (spec, search, validate, convert).
+fn load_raw(file: &str) -> Result<Value, OadigError> {
+    Ok(loader::load(file)?.value)
+}
+
+// Load the spec file and, when it is Swagger 2.0, transparently convert
+// it to OpenAPI 3.0 so the rest of the command set can use a single
+// code path. OpenAPI 3.x specs pass through unchanged.
+fn load_canonical(file: &str) -> Result<Value, OadigError> {
+    let raw = load_raw(file)?;
+    if raw.get("swagger").and_then(Value::as_str) == Some("2.0") {
+        convert::run(&raw, "3.0")
+    } else {
+        Ok(raw)
+    }
+}
+
 pub fn dispatch(
     command: &Command,
     opts: ResolveOptions,
     show_null: bool,
 ) -> Result<Value, OadigError> {
     Ok(match command {
-        Command::Info { file } => info::run(&loader::load(file)?.value, show_null),
-        Command::Spec { file } => spec_version::run(&loader::load(file)?.value),
-        Command::Overview { file } => overview::run(&loader::load(file)?.value, show_null),
-        Command::Stats { file } => stats::run(&loader::load(file)?.value),
+        // Raw-only: the command's whole purpose depends on the source
+        // shape (version report, full-tree search, structural validation,
+        // the converter itself).
+        Command::Spec { file } => spec_version::run(&load_raw(file)?),
+        Command::Validate { file } => validate::run(&load_raw(file)?)?,
+        Command::Convert { target, file } => convert::run(&load_raw(file)?, target)?,
+        Command::Search {
+            keyword,
+            file,
+            regex,
+            case_sensitive,
+            include,
+            exclude,
+        } => search::run(
+            &load_raw(file)?,
+            keyword,
+            *regex,
+            *case_sensitive,
+            include,
+            exclude,
+        )?,
+
+        // Overview reports the original version alongside stats/operations,
+        // so it needs both.
+        Command::Overview { file } => {
+            let raw = load_raw(file)?;
+            let canonical = if raw.get("swagger").and_then(Value::as_str) == Some("2.0") {
+                convert::run(&raw, "3.0")?
+            } else {
+                raw.clone()
+            };
+            overview::run(&raw, &canonical, show_null)
+        }
+
+        // Everything else runs against the canonical (OpenAPI 3.x) form.
+        Command::Info { file } => info::run(&load_canonical(file)?, show_null),
+        Command::Stats { file } => stats::run(&load_canonical(file)?),
         Command::Paths { file, filters } => {
             let pf = filter::PathFilter::from_strings(filters)?;
-            paths::run(&loader::load(file)?.value, &pf)
+            paths::run(&load_canonical(file)?, &pf)
         }
         Command::Operations {
             file,
@@ -72,12 +123,12 @@ pub fn dispatch(
             exclude,
         } => {
             let of = filter::OpFilter::from_strings(filters)?;
-            operations::run(&loader::load(file)?.value, include, exclude, &of, opts)
+            operations::run(&load_canonical(file)?, include, exclude, &of, opts)
         }
         Command::Operation { args, method, path } => {
             let (id, file) = split_positionals(args, method, path)?;
             operation::run(
-                &loader::load(file)?.value,
+                &load_canonical(file)?,
                 id,
                 method.as_deref(),
                 path.as_deref(),
@@ -88,15 +139,15 @@ pub fn dispatch(
             file,
             include,
             exclude,
-        } => statuses::run(&loader::load(file)?.value, include, exclude, opts),
-        Command::Requests { file } => requests::run(&loader::load(file)?.value, opts),
+        } => statuses::run(&load_canonical(file)?, include, exclude, opts),
+        Command::Requests { file } => requests::run(&load_canonical(file)?, opts),
         Command::Responses { file, status } => {
-            responses::run(&loader::load(file)?.value, status.as_deref(), opts)
+            responses::run(&load_canonical(file)?, status.as_deref(), opts)
         }
         Command::Request { args, method, path } => {
             let (id, file) = split_positionals(args, method, path)?;
             request::run(
-                &loader::load(file)?.value,
+                &load_canonical(file)?,
                 id,
                 method.as_deref(),
                 path.as_deref(),
@@ -111,7 +162,7 @@ pub fn dispatch(
         } => {
             let (id, file) = split_positionals(args, method, path)?;
             response::run(
-                &loader::load(file)?.value,
+                &load_canonical(file)?,
                 id,
                 method.as_deref(),
                 path.as_deref(),
@@ -119,26 +170,9 @@ pub fn dispatch(
                 opts,
             )?
         }
-        Command::Search {
-            keyword,
-            file,
-            regex,
-            case_sensitive,
-            include,
-            exclude,
-        } => search::run(
-            &loader::load(file)?.value,
-            keyword,
-            *regex,
-            *case_sensitive,
-            include,
-            exclude,
-        )?,
-        Command::Tags { file } => tags::run(&loader::load(file)?.value),
-        Command::Validate { file } => validate::run(&loader::load(file)?.value)?,
-        Command::Convert { target, file } => convert::run(&loader::load(file)?.value, target)?,
-        Command::Components { file } => components::run(&loader::load(file)?.value, show_null),
-        Command::Schemas { file } => schemas::run(&loader::load(file)?.value),
-        Command::Schema { name, file } => schema::run(&loader::load(file)?.value, name, opts)?,
+        Command::Tags { file } => tags::run(&load_canonical(file)?),
+        Command::Components { file } => components::run(&load_canonical(file)?, show_null),
+        Command::Schemas { file } => schemas::run(&load_canonical(file)?),
+        Command::Schema { name, file } => schema::run(&load_canonical(file)?, name, opts)?,
     })
 }
