@@ -1,3 +1,7 @@
+// Assumes the input spec is already in OpenAPI 3.x shape (Swagger 2.0
+// is converted at dispatch). Callers that feed a raw 2.0 spec will see
+// empty `schema` fields because `response.content` does not exist in 2.0.
+
 use std::collections::{BTreeMap, HashSet};
 
 use serde_json::{Map, Value};
