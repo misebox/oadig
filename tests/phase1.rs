@@ -617,6 +617,31 @@ fn convert_rewrites_refs() {
 }
 
 #[test]
+fn convert_openapi30_to_openapi31_bumps_version() {
+    let v = run_json(&[
+        "convert",
+        "3.1",
+        "tests/fixtures/oai/petstore-expanded.yaml",
+    ]);
+    assert_eq!(v["openapi"], "3.1.0");
+}
+
+#[test]
+fn convert_openapi30_to_openapi31_rewrites_nullable() {
+    let v = run_json(&["convert", "3.1", "tests/fixtures/openapi30-nullable.yaml"]);
+    assert_eq!(v["openapi"], "3.1.0");
+    let name = &v["components"]["schemas"]["Item"]["properties"]["name"];
+    assert!(name.get("nullable").is_none());
+    assert_eq!(name["type"], json!(["string", "null"]));
+}
+
+#[test]
+fn convert_swagger2_to_openapi31_chains() {
+    let v = run_json(&["convert", "3.1", SWAGGER2_YAML]);
+    assert_eq!(v["openapi"], "3.1.0");
+}
+
+#[test]
 fn convert_rejects_unsupported_direction() {
     let out = bin()
         .args(["convert", "2.0", PETSTORE_YAML])

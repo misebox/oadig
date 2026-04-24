@@ -2,20 +2,23 @@ use serde_json::{Map, Value, json};
 
 use crate::error::OadigError;
 
-// Top-level convert dispatch. Only Swagger 2.0 → OpenAPI 3.0 is implemented
-// for the first cut; other directions are future phases.
+// Top-level convert dispatch. Forward conversions only:
+// Swagger 2.0 → OpenAPI 3.0, OpenAPI 3.0 → 3.1. Chained for 2.0 → 3.1.
 pub fn run(spec: &Value, target: &str) -> Result<Value, OadigError> {
     let swagger = spec.get("swagger").and_then(Value::as_str);
     let openapi = spec.get("openapi").and_then(Value::as_str);
 
     match (swagger, openapi, target) {
         (Some("2.0"), _, "3.0") => Ok(swagger2_to_openapi30(spec)),
+        (Some("2.0"), _, "3.1") => Ok(openapi30_to_openapi31(&swagger2_to_openapi30(spec))),
+        (None, Some(v), "3.0") if v.starts_with("3.0") => Ok(spec.clone()),
+        (None, Some(v), "3.1") if v.starts_with("3.0") => Ok(openapi30_to_openapi31(spec)),
         (None, Some(v), t) if v.starts_with("3.") && v == t => Ok(spec.clone()),
         (None, Some(_), _) => Err(OadigError::Other(format!(
-            "conversion to {target} from OpenAPI 3.x is not implemented yet"
+            "conversion to {target} from OpenAPI 3.x is not implemented"
         ))),
         (Some("2.0"), _, _) => Err(OadigError::Other(format!(
-            "conversion to {target} from Swagger 2.0 is not implemented (try 3.0)"
+            "conversion to {target} from Swagger 2.0 is not implemented"
         ))),
         _ => Err(OadigError::Other(format!(
             "unable to determine source spec version; target={target}"
@@ -376,6 +379,56 @@ fn rewrite_ref(r: &str) -> Option<String> {
         }
     }
     None
+}
+
+// ---- OpenAPI 3.0 → 3.1 ----
+
+fn openapi30_to_openapi31(spec: &Value) -> Value {
+    let mut out = spec.clone();
+    if let Value::Object(obj) = &mut out {
+        obj.insert("openapi".into(), Value::String("3.1.0".into()));
+    }
+    convert_nullable(&mut out);
+    out
+}
+
+// Rewrite `nullable: true` into `type: ["<orig>", "null"]`. The `nullable`
+// keyword was removed in OpenAPI 3.1 in favor of the JSON Schema union form.
+fn convert_nullable(value: &mut Value) {
+    match value {
+        Value::Object(obj) => {
+            let nullable = obj
+                .get("nullable")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            if nullable {
+                obj.remove("nullable");
+                let current_type = obj.remove("type");
+                let new_type = match current_type {
+                    Some(Value::String(s)) => {
+                        Value::Array(vec![Value::String(s), Value::String("null".into())])
+                    }
+                    Some(Value::Array(mut arr)) => {
+                        if !arr.iter().any(|v| v.as_str() == Some("null")) {
+                            arr.push(Value::String("null".into()));
+                        }
+                        Value::Array(arr)
+                    }
+                    _ => Value::Array(vec![Value::String("null".into())]),
+                };
+                obj.insert("type".into(), new_type);
+            }
+            for (_, v) in obj.iter_mut() {
+                convert_nullable(v);
+            }
+        }
+        Value::Array(arr) => {
+            for v in arr.iter_mut() {
+                convert_nullable(v);
+            }
+        }
+        _ => {}
+    }
 }
 
 // ---- helpers ----
