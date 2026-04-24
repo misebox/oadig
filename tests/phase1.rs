@@ -55,7 +55,7 @@ fn spec_is_null_when_missing() {
 }
 
 #[test]
-fn info_show_null_fills_missing_keys() {
+fn info_show_null_fills_missing_info_keys() {
     let out = bin()
         .args(["info", "-", "--show-null"])
         .stdin(std::process::Stdio::piped())
@@ -71,42 +71,21 @@ fn info_show_null_fills_missing_keys() {
     let result = out.wait_with_output().unwrap();
     assert!(result.status.success());
     let value: Value = serde_json::from_slice(&result.stdout).unwrap();
-    assert!(value["openapi"].is_null());
     assert!(value["description"].is_null());
     assert!(value["contact"].is_null());
     assert!(value["license"].is_null());
-    assert!(value["servers"].is_null());
-}
-
-#[test]
-fn info_surfaces_swagger_version_for_v2_specs() {
-    let info = run_json(&["info", SWAGGER2_YAML]);
-    assert_eq!(info["swagger"], "2.0");
-    assert!(info.get("openapi").is_none());
-    assert_eq!(info["title"], "Legacy API");
-}
-
-#[test]
-fn info_omits_spec_version_key_when_missing() {
-    // Feed a minimal spec via stdin that has neither openapi nor swagger.
-    let out = bin()
-        .args(["info", "-"])
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .spawn()
-        .expect("spawn");
-    use std::io::Write;
-    out.stdin
-        .as_ref()
-        .unwrap()
-        .write_all(b"info:\n  title: Orphan\n  version: \"0\"\n")
-        .unwrap();
-    let result = out.wait_with_output().unwrap();
-    assert!(result.status.success());
-    let value: Value = serde_json::from_slice(&result.stdout).unwrap();
+    // openapi/swagger/servers live on the top-level spec, not the info object.
     assert!(value.get("openapi").is_none());
-    assert!(value.get("swagger").is_none());
-    assert_eq!(value["title"], "Orphan");
+    assert!(value.get("servers").is_none());
+}
+
+#[test]
+fn info_omits_spec_version_and_servers() {
+    let info = run_json(&["info", PETSTORE_YAML]);
+    assert!(info.get("openapi").is_none());
+    assert!(info.get("swagger").is_none());
+    assert!(info.get("servers").is_none());
+    assert_eq!(info["title"], "Petstore");
 }
 
 #[test]
@@ -116,10 +95,6 @@ fn info_yaml_and_json_match() {
     assert_eq!(from_yaml, from_json);
     assert_eq!(from_yaml["title"], "Petstore");
     assert_eq!(from_yaml["version"], "1.0.0");
-    assert_eq!(
-        from_yaml["servers"][0]["url"],
-        "https://petstore.example.com/v1"
-    );
 }
 
 #[test]
@@ -761,14 +736,26 @@ fn schema_marks_circular_ref() {
 }
 
 #[test]
-fn overview_combines_info_stats_operations() {
+fn overview_places_spec_version_and_servers_at_top_level() {
     let overview = run_json(&["overview", PETSTORE_YAML]);
+    assert_eq!(overview["openapi"], "3.1.0");
     assert_eq!(overview["info"], run_json(&["info", PETSTORE_YAML]));
+    assert_eq!(
+        overview["servers"][0]["url"],
+        "https://petstore.example.com/v1"
+    );
     assert_eq!(overview["stats"], run_json(&["stats", PETSTORE_YAML]));
     assert_eq!(
         overview["operations"],
         run_json(&["operations", PETSTORE_YAML])
     );
+}
+
+#[test]
+fn overview_uses_swagger_key_for_v2() {
+    let overview = run_json(&["overview", SWAGGER2_YAML]);
+    assert_eq!(overview["swagger"], "2.0");
+    assert!(overview.get("openapi").is_none());
 }
 
 #[test]
