@@ -268,6 +268,11 @@ pub enum Command {
 
     // ---- search ----
     /// Validate a spec against the OpenAPI 3.x schema.
+    ///
+    /// Reports only the first structural error as a JSON Pointer + message;
+    /// fix and re-run to surface the next one.
+    /// Swagger 2.0 input returns `valid: null` — not supported by this check.
+    #[command(verbatim_doc_comment)]
     Validate {
         #[arg(help = FILE_DOC)]
         file: String,

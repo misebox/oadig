@@ -148,6 +148,15 @@ Use `oadig convert 3.0 swagger2.yaml` to emit the converted document explicitly.
 
 ---
 
+## `validate` and `convert` Notes
+
+- `validate` reports only the **first** structural error it encounters (a JSON Pointer + message). Fix and re-run to surface the next one.
+- `validate` on a Swagger 2.0 spec returns `valid: null` with a not-supported message; the check is OpenAPI 3.x only.
+- `convert` 3.0 → 3.1 covers `nullable` and the `exclusiveMinimum` / `exclusiveMaximum` boolean-to-number change. It does not exhaustively cover every JSON Schema 2020-12 keyword difference.
+- `convert` forward only: 3.x → 2.0 is not supported.
+
+---
+
 ## Output Conventions
 
 - JSON is pretty by default. `-c` compacts. `-l` puts one array element per line.
