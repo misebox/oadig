@@ -61,12 +61,20 @@ fn load_raw(file: &str) -> Result<Value, OadigError> {
 // it to OpenAPI 3.0 so the rest of the command set can use a single
 // code path. OpenAPI 3.x specs pass through unchanged.
 fn load_canonical(file: &str) -> Result<Value, OadigError> {
+    Ok(load_raw_and_canonical(file)?.1)
+}
+
+// Load the raw spec and the canonical (OpenAPI 3.x) form. Used by
+// `overview`, which reports the original version alongside data derived
+// from the converted spec.
+fn load_raw_and_canonical(file: &str) -> Result<(Value, Value), OadigError> {
     let raw = load_raw(file)?;
-    if raw.get("swagger").and_then(Value::as_str) == Some("2.0") {
-        convert::run(&raw, "3.0")
+    let canonical = if raw.get("swagger").and_then(Value::as_str) == Some("2.0") {
+        convert::run(&raw, "3.0")?
     } else {
-        Ok(raw)
-    }
+        raw.clone()
+    };
+    Ok((raw, canonical))
 }
 
 pub fn dispatch(
@@ -100,12 +108,7 @@ pub fn dispatch(
         // Overview reports the original version alongside stats/operations,
         // so it needs both.
         Command::Overview { file } => {
-            let raw = load_raw(file)?;
-            let canonical = if raw.get("swagger").and_then(Value::as_str) == Some("2.0") {
-                convert::run(&raw, "3.0")?
-            } else {
-                raw.clone()
-            };
+            let (raw, canonical) = load_raw_and_canonical(file)?;
             overview::run(&raw, &canonical, show_null)
         }
 
