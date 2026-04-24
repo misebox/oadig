@@ -22,6 +22,16 @@ Homebrew:
 brew install misebox/tap/oadig
 ```
 
+## Uninstall
+
+```sh
+cargo uninstall oadig
+
+# or, if installed via brew
+brew uninstall oadig
+brew untap misebox/tap   # optional: drop the tap entirely
+```
+
 ---
 
 ## Quick Start
