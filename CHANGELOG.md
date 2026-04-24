@@ -6,6 +6,30 @@ semantic versioning (pre-1.0: each phase bumps minor).
 
 ## [Unreleased]
 
+## [0.3.0]
+
+### Added
+
+- **`validate`** — structural check against the OpenAPI 3.x schema via
+  `oas3` + `serde_path_to_error`; reports the first error as a JSON
+  Pointer with a message. Swagger 2.0 specs report as `valid: null`
+  with `version: "2.0"`.
+- **`convert <target> <file>`** — Swagger 2.0 → OpenAPI 3.0 / 3.1 and
+  OpenAPI 3.0 → 3.1 (`nullable: true` → type array, version bump).
+- **Transparent Swagger 2.0 auto-convert at dispatch** so every data
+  command sees the OpenAPI 3.0 shape. `spec`, `search`, `validate`,
+  `convert` still operate on the original document; `overview` reports
+  the raw version while running stats and operations on the converted
+  form.
+
+### Changed
+
+- **`info` / `overview` split**: `info` returns just the OpenAPI `info`
+  object; the spec version and `servers` moved to `overview`. (Breaking)
+- **`statuses --include schema`** no longer needs the Swagger 2.0
+  `"*/*"` fallback — auto-convert normalizes bare `response.schema`
+  into `content: { application/json: { schema } }` upstream.
+
 ## [0.2.0] — 2026-04-24
 
 ### Added
