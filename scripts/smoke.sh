@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 F=tests/fixtures/petstore.yaml
 FJ=tests/fixtures/petstore.json
 FC=tests/fixtures/circular.yaml
+FS2=tests/fixtures/swagger2.yaml
 
 run() {
   local label="$1"
@@ -46,6 +47,10 @@ run "schemas"                                 schemas "$F"
 run "schema Pets"                             schema Pets "$F"
 run "schema Pets --no-resolve-refs"           schema --no-resolve-refs Pets "$F"
 run "schema Node (circular)"                  schema Node "$FC"
+run "validate (petstore)"                     validate "$F"
+run "validate (swagger2)"                     validate "$FS2"
+run "convert 3.0 (swagger2)"                  convert 3.0 "$FS2"
+run "convert 3.1 (swagger2)"                  convert 3.1 "$FS2"
 
 echo "=== info via stdin ==="
 cat "$FJ" | cargo run --quiet -- info -
