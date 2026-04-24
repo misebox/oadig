@@ -46,6 +46,15 @@ fn swagger2_to_openapi30(spec: &Value) -> Value {
         }
     }
 
+    // Preserve all `x-*` vendor extensions at the top level.
+    if let Some(obj) = spec.as_object() {
+        for (k, v) in obj {
+            if k.starts_with("x-") {
+                out.insert(k.clone(), v.clone());
+            }
+        }
+    }
+
     let global_consumes = collect_strings(spec.get("consumes"));
     let global_produces = collect_strings(spec.get("produces"));
 
@@ -70,6 +79,9 @@ fn swagger2_to_openapi30(spec: &Value) -> Value {
     rewritten
 }
 
+// When `schemes` is absent we default to `https`. The Swagger 2.0 spec
+// actually says "fallback to the request scheme", but OpenAPI 3.0
+// `servers` needs a concrete URL, so a conservative default is required.
 fn build_servers(spec: &Value) -> Option<Value> {
     let host = spec.get("host").and_then(Value::as_str)?;
     let base = spec.get("basePath").and_then(Value::as_str).unwrap_or("");
@@ -111,9 +123,64 @@ fn build_components(spec: &Value) -> Map<String, Value> {
         components.insert("responses".into(), Value::Object(out));
     }
     if let Some(sec) = spec.get("securityDefinitions").and_then(Value::as_object) {
-        components.insert("securitySchemes".into(), Value::Object(sec.clone()));
+        let mut out = Map::new();
+        for (k, v) in sec {
+            out.insert(k.clone(), convert_security_scheme(v));
+        }
+        components.insert("securitySchemes".into(), Value::Object(out));
     }
     components
+}
+
+// Swagger 2.0 `basic` becomes OpenAPI 3.0 `http` with `scheme: basic`.
+// `oauth2` flattens `flow`/`authorizationUrl`/`tokenUrl`/`scopes` into a
+// nested `flows.<flow>` object.
+fn convert_security_scheme(scheme: &Value) -> Value {
+    let Some(obj) = scheme.as_object() else {
+        return scheme.clone();
+    };
+    let ty = obj.get("type").and_then(Value::as_str).unwrap_or("");
+    match ty {
+        "basic" => {
+            let mut out = Map::new();
+            out.insert("type".into(), Value::String("http".into()));
+            out.insert("scheme".into(), Value::String("basic".into()));
+            if let Some(d) = obj.get("description") {
+                out.insert("description".into(), d.clone());
+            }
+            Value::Object(out)
+        }
+        "oauth2" => {
+            let flow = obj
+                .get("flow")
+                .and_then(Value::as_str)
+                .unwrap_or("implicit");
+            // 2.0 flow names: implicit, password, application, accessCode
+            // 3.0 flow names: implicit, password, clientCredentials, authorizationCode
+            let flow_name = match flow {
+                "application" => "clientCredentials",
+                "accessCode" => "authorizationCode",
+                other => other,
+            };
+            let mut flow_obj = Map::new();
+            for key in ["authorizationUrl", "tokenUrl", "scopes"] {
+                if let Some(v) = obj.get(key) {
+                    flow_obj.insert(key.into(), v.clone());
+                }
+            }
+            let mut flows = Map::new();
+            flows.insert(flow_name.into(), Value::Object(flow_obj));
+            let mut out = Map::new();
+            out.insert("type".into(), Value::String("oauth2".into()));
+            if let Some(d) = obj.get("description") {
+                out.insert("description".into(), d.clone());
+            }
+            out.insert("flows".into(), Value::Object(flows));
+            Value::Object(out)
+        }
+        // apiKey and others have the same shape in 2.0 and 3.0.
+        _ => scheme.clone(),
+    }
 }
 
 fn convert_path_item(item: &Value, g_consumes: &[String], g_produces: &[String]) -> Value {
@@ -216,11 +283,16 @@ fn convert_parameter(p: &Value) -> Value {
             "name" | "in" | "description" | "required" | "deprecated" | "allowEmptyValue" => {
                 out.insert(k.clone(), v.clone());
             }
-            "type" | "format" | "items" | "collectionFormat" | "enum" | "default" | "minimum"
-            | "maximum" | "exclusiveMinimum" | "exclusiveMaximum" | "minLength" | "maxLength"
-            | "pattern" | "uniqueItems" | "multipleOf" => {
+            "type" | "format" | "items" | "enum" | "default" | "minimum" | "maximum"
+            | "exclusiveMinimum" | "exclusiveMaximum" | "minLength" | "maxLength" | "pattern"
+            | "uniqueItems" | "multipleOf" => {
                 schema.insert(k.clone(), v.clone());
             }
+            // Swagger 2.0's `collectionFormat` (csv/ssv/tsv/pipes/multi) maps
+            // to OpenAPI 3.0 `style`/`explode` on the parameter itself, not
+            // on the schema. Full translation is non-trivial — drop it here
+            // rather than keep it in the wrong place.
+            "collectionFormat" => {}
             _ => {
                 out.insert(k.clone(), v.clone());
             }

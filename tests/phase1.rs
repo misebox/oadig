@@ -632,6 +632,44 @@ fn convert_swagger2_to_openapi30_round_trips_through_validate() {
 }
 
 #[test]
+fn convert_preserves_top_level_vendor_extensions() {
+    let v = run_json(&["convert", "3.0", SWAGGER2_YAML]);
+    assert_eq!(v["x-vendor-tag"], "legacy-fixture");
+}
+
+#[test]
+fn convert_reshapes_oauth2_security_scheme() {
+    let v = run_json(&["convert", "3.0", SWAGGER2_YAML]);
+    let oauth = &v["components"]["securitySchemes"]["oauth2_auth"];
+    assert_eq!(oauth["type"], "oauth2");
+    // 2.0 `accessCode` flow → 3.0 `authorizationCode`
+    let flow = &oauth["flows"]["authorizationCode"];
+    assert_eq!(
+        flow["authorizationUrl"],
+        "https://example.com/oauth/authorize"
+    );
+    assert_eq!(flow["tokenUrl"], "https://example.com/oauth/token");
+    assert_eq!(flow["scopes"]["read"], "read access");
+}
+
+#[test]
+fn convert_reshapes_basic_security_scheme() {
+    let v = run_json(&["convert", "3.0", SWAGGER2_YAML]);
+    let basic = &v["components"]["securitySchemes"]["basic_auth"];
+    assert_eq!(basic["type"], "http");
+    assert_eq!(basic["scheme"], "basic");
+}
+
+#[test]
+fn convert_keeps_apikey_scheme_shape() {
+    let v = run_json(&["convert", "3.0", SWAGGER2_YAML]);
+    let key = &v["components"]["securitySchemes"]["api_key"];
+    assert_eq!(key["type"], "apiKey");
+    assert_eq!(key["in"], "header");
+    assert_eq!(key["name"], "X-API-Key");
+}
+
+#[test]
 fn convert_rewrites_refs() {
     let value = run_json(&["convert", "3.0", "tests/fixtures/swagger2-with-ref.yaml"]);
     let schema_ref = &value["paths"]["/a"]["get"]["responses"]["200"]["content"]["application/json"]

@@ -7,6 +7,21 @@ host: api.example.com
 basePath: /v1
 schemes:
   - https
+x-vendor-tag: legacy-fixture
+securityDefinitions:
+  oauth2_auth:
+    type: oauth2
+    flow: accessCode
+    authorizationUrl: https://example.com/oauth/authorize
+    tokenUrl: https://example.com/oauth/token
+    scopes:
+      read: read access
+  basic_auth:
+    type: basic
+  api_key:
+    type: apiKey
+    in: header
+    name: X-API-Key
 paths:
   /ping:
     get:
