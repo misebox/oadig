@@ -267,6 +267,11 @@ pub enum Command {
     },
 
     // ---- search ----
+    /// Validate a spec against the OpenAPI 3.x schema.
+    Validate {
+        #[arg(help = FILE_DOC)]
+        file: String,
+    },
     /// Search string values in the spec for a keyword.
     Search {
         /// Keyword or regex to match.

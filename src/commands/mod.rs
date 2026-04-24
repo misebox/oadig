@@ -16,6 +16,7 @@ pub mod spec_version;
 pub mod stats;
 pub mod statuses;
 pub mod tags;
+pub mod validate;
 
 use serde_json::Value;
 
@@ -133,6 +134,7 @@ pub fn dispatch(
             exclude,
         )?,
         Command::Tags { file } => tags::run(&loader::load(file)?.value),
+        Command::Validate { file } => validate::run(&loader::load(file)?.value)?,
         Command::Components { file } => components::run(&loader::load(file)?.value, show_null),
         Command::Schemas { file } => schemas::run(&loader::load(file)?.value),
         Command::Schema { name, file } => schema::run(&loader::load(file)?.value, name, opts)?,

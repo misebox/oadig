@@ -42,6 +42,7 @@ fn subcommand_name(cmd: &Command) -> &'static str {
         Command::Search { .. } => "search",
         Command::Tags { .. } => "tags",
         Command::Components { .. } => "components",
+        Command::Validate { .. } => "validate",
         Command::Schemas { .. } => "schemas",
         Command::Schema { .. } => "schema",
     }
@@ -59,7 +60,8 @@ fn command_resolves_refs(cmd: &Command) -> bool {
         | Command::Tags { .. }
         | Command::Components { .. }
         | Command::Schemas { .. }
-        | Command::Search { .. } => false,
+        | Command::Search { .. }
+        | Command::Validate { .. } => false,
         Command::Statuses { include, .. } => include.iter().any(|f| {
             matches!(
                 f,
@@ -98,7 +100,8 @@ fn command_can_touch_refs(cmd: &Command) -> bool {
         | Command::Tags { .. }
         | Command::Components { .. }
         | Command::Schemas { .. }
-        | Command::Search { .. } => false,
+        | Command::Search { .. }
+        | Command::Validate { .. } => false,
         _ => true,
     }
 }

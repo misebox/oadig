@@ -596,6 +596,53 @@ fn search_regex_mode() {
 }
 
 #[test]
+fn validate_accepts_valid_openapi() {
+    let v = run_json(&["validate", PETSTORE_YAML]);
+    assert_eq!(v["valid"], true);
+    assert_eq!(v["version"], "3.1.0");
+}
+
+#[test]
+fn validate_reports_swagger2_as_unsupported() {
+    let v = run_json(&["validate", SWAGGER2_YAML]);
+    assert!(v["valid"].is_null());
+    assert_eq!(v["version"], "2.0");
+    assert!(
+        v["errors"][0]["message"]
+            .as_str()
+            .unwrap()
+            .contains("Swagger 2.0")
+    );
+}
+
+#[test]
+fn validate_reports_structural_error_with_pointer() {
+    let out = bin()
+        .args(["validate", "-"])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn");
+    use std::io::Write;
+    out.stdin
+        .as_ref()
+        .unwrap()
+        .write_all(b"openapi: \"3.1.0\"\ninfo: 42\npaths: {}\n")
+        .unwrap();
+    let result = out.wait_with_output().unwrap();
+    assert!(result.status.success());
+    let v: Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(v["valid"], false);
+    assert_eq!(v["errors"][0]["pointer"], "/info");
+    assert!(
+        v["errors"][0]["message"]
+            .as_str()
+            .unwrap()
+            .contains("expected")
+    );
+}
+
+#[test]
 fn tags_lists_declared_with_operation_count() {
     let tags = run_json(&["tags", PETSTORE_YAML]);
     assert_eq!(
