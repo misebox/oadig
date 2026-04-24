@@ -461,7 +461,41 @@ fn openapi30_to_openapi31(spec: &Value) -> Value {
         obj.insert("openapi".into(), Value::String("3.1.0".into()));
     }
     convert_nullable(&mut out);
+    convert_exclusive_bounds(&mut out);
     out
+}
+
+// 3.0: `exclusiveMinimum` is a boolean modifier on `minimum`.
+// 3.1 (JSON Schema 2020-12): `exclusiveMinimum` is the numeric bound
+// itself, replacing `minimum`. Same for `exclusiveMaximum`.
+fn convert_exclusive_bounds(value: &mut Value) {
+    if let Value::Object(obj) = value {
+        rewrite_exclusive(obj, "minimum", "exclusiveMinimum");
+        rewrite_exclusive(obj, "maximum", "exclusiveMaximum");
+        for (_, v) in obj.iter_mut() {
+            convert_exclusive_bounds(v);
+        }
+    } else if let Value::Array(arr) = value {
+        for v in arr.iter_mut() {
+            convert_exclusive_bounds(v);
+        }
+    }
+}
+
+fn rewrite_exclusive(obj: &mut Map<String, Value>, bound: &str, exclusive: &str) {
+    match obj.get(exclusive).and_then(Value::as_bool) {
+        Some(true) => {
+            if let Some(n) = obj.remove(bound) {
+                obj.insert(exclusive.into(), n);
+            } else {
+                obj.remove(exclusive);
+            }
+        }
+        Some(false) => {
+            obj.remove(exclusive);
+        }
+        _ => {}
+    }
 }
 
 // Rewrite `nullable: true` into `type: ["<orig>", "null"]`. The `nullable`

@@ -698,6 +698,18 @@ fn convert_openapi30_to_openapi31_rewrites_nullable() {
 }
 
 #[test]
+fn convert_openapi30_to_openapi31_rewrites_exclusive_bounds() {
+    let v = run_json(&["convert", "3.1", "tests/fixtures/openapi30-nullable.yaml"]);
+    let age = &v["components"]["schemas"]["Item"]["properties"]["age"];
+    // exclusiveMinimum: true + minimum: 0  →  exclusiveMinimum: 0, no minimum
+    assert_eq!(age["exclusiveMinimum"], 0);
+    assert!(age.get("minimum").is_none());
+    // exclusiveMaximum: false  →  drop exclusiveMaximum, keep maximum
+    assert!(age.get("exclusiveMaximum").is_none());
+    assert_eq!(age["maximum"], 120);
+}
+
+#[test]
 fn convert_swagger2_to_openapi31_chains() {
     let v = run_json(&["convert", "3.1", SWAGGER2_YAML]);
     assert_eq!(v["openapi"], "3.1.0");

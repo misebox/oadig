@@ -23,3 +23,9 @@ components:
           nullable: true
         id:
           type: integer
+        age:
+          type: integer
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 120
+          exclusiveMaximum: false
