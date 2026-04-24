@@ -2,9 +2,9 @@
 
 **OpenAPI dig** — extract structured slices from large OpenAPI specs.
 
-Built for non-interactive use, including AI agents. When a full spec is too large to pass to an LLM, use `oadig` to pull out only what's needed.
+Non-interactive, composable with `jq` and LLM pipelines.
 
-Run `oadig --help` and `oadig <subcommand> --help` for the authoritative command and flag reference. This README covers the non-obvious bits.
+Run `oadig --help` and `oadig <subcommand> --help` for the command and flag reference. This README covers what `--help` cannot.
 
 ---
 
@@ -36,24 +36,25 @@ brew untap misebox/tap   # optional: drop the tap entirely
 
 ## Quick Start
 
-### AI agent workflow
-
 ```sh
+# Orient yourself
 oadig overview openapi.yaml
+
+# Narrow to a subset of operations, one entry per line
 oadig operations --filter 'tag=Customers' -l openapi.yaml
+
+# Drill into a single operation
 oadig op getUser openapi.yaml
+
+# Search string values anywhere in the spec
 oadig search webhook openapi.yaml
-```
 
-### Shell exploration
-
-```sh
+# Read from stdin
 curl -s https://example.com/openapi.json | oadig paths -
-oadig operations -c openapi.yaml | jq '.[] | select(.deprecated == true)'
-oadig operations --filter 'method=POST' --filter 'path=/v1/charges*' -l stripe-api.json
-```
 
-For trying it against real large specs (GitHub REST, Stripe, Amazon SP-API), see `tmp/realspecs/README.md`.
+# Pipe to jq
+oadig operations -c openapi.yaml | jq '.[] | select(.deprecated == true)'
+```
 
 ---
 
@@ -119,7 +120,7 @@ oadig operations --filter 'method=GET' --filter 'path=/v1/*' openapi.yaml
 oadig paths --filter 'path=*admin*' openapi.yaml
 ```
 
-Regex is intentionally not supported here — use `search` for that.
+Regex is not supported here — use `search` for that.
 
 ---
 
@@ -140,24 +141,22 @@ Partial:
 - `spec`, `info`, `paths`, `operations`, `tags`, `stats` work on Swagger 2.0 specs.
 - `statuses --include schema` folds Swagger 2.0's bare `response.schema` under the `"*/*"` key.
 - `content` (media type map) is OpenAPI 3.x only.
-- Full `requestBody` interop (Swagger 2.0 uses `parameters: [{ in: body }]`) is out of scope for v0.2.
+- Full `requestBody` interop (Swagger 2.0 uses `parameters: [{ in: body }]`) is not implemented.
 
 ---
 
 ## Output Conventions
 
-- JSON is pretty by default. `-c` compacts. `-l` puts one array element per line (friendly for `jq` and LLM streaming).
-- Keys preserve insertion order (spec order), not alphabetical.
-- Output keys match OpenAPI naming (`operationId`, `requestBody`, `responses`). The corresponding `--include` flag names are shorthand (`request`, `response`).
-- Applying a flag that the chosen subcommand ignores prints a warning on stderr but does not fail the run.
+- JSON is pretty by default. `-c` compacts. `-l` puts one array element per line.
+- Keys preserve spec order, not alphabetical.
+- Output keys follow OpenAPI names (`requestBody`, `responses`); `--include` flag names are shorthand (`request`, `response`).
+- Applying a flag the subcommand ignores prints a stderr warning but does not fail.
 
 ---
 
 ## Limitations
 
 - General-purpose JSON querying (filtering, transformation, projection) is out of scope — use `jq`.
-- No spec validation; invalid specs may produce partial output.
-- External `$ref` not supported.
 
 ---
 
